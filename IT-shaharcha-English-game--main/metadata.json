@@ -1,0 +1,6 @@
+{
+  "name": "IT Shaharcha Arena",
+  "description": "IT Shaharcha Xatirchi o'quvchilari uchun interaktiv sensorli doskada bellashuv o'yinlari platformasi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
