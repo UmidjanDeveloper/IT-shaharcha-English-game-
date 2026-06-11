@@ -50,34 +50,53 @@ const HARD: WordPair[] = [
 
 type CS = 'idle'|'pulling'|'slipping'|'won'|'lost';
 
+// ── Hip pivot Y in SVG space ──
+const HY = 240; // GY(316) - 76
+
+// ── Lean angle per state (degrees, SVG clockwise = positive) ──
+function getLean(state: CS, L: boolean): number {
+  const b = state==='pulling'  ? -34
+    : state==='slipping' ?  16
+    : state==='won'      ?   0
+    : state==='lost'     ?  10
+    : -22; // idle
+  return L ? b : -b;
+}
+
+// ── Compute actual SVG hand position AFTER rotation ──
+// Hand in unrotated group is at (bx + rs*68, HY-40).
+// Pivot = (bx, HY).  SVG rotate(θ) = clockwise by θ°.
+function handPos(bx: number, lean: number, rs: number): [number, number] {
+  const rad = (lean * Math.PI) / 180;
+  const dx = rs * 68, dy = -40; // offset from pivot in unrotated space
+  const c = Math.cos(rad), s = Math.sin(rad);
+  return [bx + dx * c - dy * s, HY + dx * s + dy * c];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// UZBEK CHARACTER — realistic proportions, atlas shirt, doppi hat.
-// Upper body rotates around hip pivot; legs stay planted on ground.
+// UZBEK CHARACTER  –  realistic proportions, doppi hat, atlas shirt + IT logo
+// Upper body rotates around hip pivot; legs stay on ground.
 // ─────────────────────────────────────────────────────────────────────────────
 function TugChar({ team, bx, state }: { team:'left'|'right'; bx:number; state:CS }) {
   const L  = team === 'left';
   const rs = L ? 1 : -1;
   const GY = 316;
-  const HY = GY - 76; // hip pivot Y = 240
+  const lean = getLean(state, L);
 
-  const lean =
-    state==='pulling'  ? (L ? -34 : 34) :
-    state==='slipping' ? (L ?  16 : -16) :
-    state==='won'      ? 0 :
-    state==='lost'     ? (L ?  10 : -10) :
-    (L ? -22 : 22);
+  // Palette
+  const SK = '#C4784A', SKD = '#9A5C35';
+  const SC = L ? '#1565C0' : '#B71C1C';   // shirt base
+  const SP = L ? '#64B5F6' : '#FFB300';   // shirt atlas accent
+  const PA = '#1a1a3e';
+  const SH = L ? '#1565C0' : '#B71C1C';
 
-  const SK  = '#C4784A', SKD = '#9A5C35';
-  const SC  = L ? '#1565C0' : '#B71C1C';
-  const SP  = L ? '#64B5F6' : '#FFB300';
-  const PA  = '#1a1a3e';
-  const SH  = L ? '#1565C0' : '#B71C1C';
-
+  // Feet
   const fFX = bx + rs * 34;
   const bFX = bx - rs * 28;
 
   return (
     <g>
+      {/* Shadow */}
       <ellipse cx={bx} cy={GY+9} rx={32} ry={8} fill="rgba(0,0,0,0.22)"/>
 
       {/* LEGS */}
@@ -92,7 +111,7 @@ function TugChar({ team, bx, state }: { team:'left'|'right'; bx:number; state:CS
       <line x1={fFX-7} y1={GY+1} x2={fFX+rs*9} y2={GY+3}
         stroke="white" strokeWidth={1.5} opacity={0.45} strokeLinecap="round"/>
 
-      {/* UPPER BODY (rotated around hip) */}
+      {/* UPPER BODY (rotated) */}
       <g transform={`rotate(${lean}, ${bx}, ${HY})`}>
 
         {/* BACK ARM */}
@@ -100,22 +119,42 @@ function TugChar({ team, bx, state }: { team:'left'|'right'; bx:number; state:CS
           stroke={SC} strokeWidth={18} fill="none" strokeLinecap="round"/>
         <circle cx={bx-rs*26} cy={HY-22} r={10} fill={SKD}/>
 
-        {/* SHIRT */}
+        {/* SHIRT BODY */}
         <path d={`M ${bx-16} ${HY} L ${bx-24} ${HY-72}
           C ${bx-22} ${HY-82} ${bx+22} ${HY-82} ${bx+24} ${HY-72} L ${bx+16} ${HY} Z`}
           fill={SC}/>
 
-        {/* Atlas ikat leaf-oval pattern */}
+        {/* Atlas ikat leaf-oval pattern on shirt */}
         {([
           [bx-12,HY-18, 25],[bx+1, HY-18,-20],[bx+13,HY-20, 22],
           [bx-8, HY-38,-18],[bx+10,HY-40, 20],
-          [bx-11,HY-58, 22],[bx+2, HY-57,-15],[bx+14,HY-60, 18],
+          [bx-11,HY-60, 22],[bx+2, HY-58,-15],[bx+14,HY-62, 18],
         ] as [number,number,number][]).map(([px,py,rot],i)=>(
           <ellipse key={i} cx={px} cy={py} rx={5} ry={8}
-            fill={SP} opacity={0.42} transform={`rotate(${rot},${px},${py})`}/>
+            fill={SP} opacity={0.38} transform={`rotate(${rot},${px},${py})`}/>
         ))}
 
-        {/* Collar */}
+        {/* ── IT SHAHARCHA LOGO ON CHEST ── */}
+        <g opacity={0.9}>
+          {/* 3 vertical pillars (IT mark) */}
+          <rect x={bx-10} y={HY-52} width={5} height={16} rx={1.5} fill="white"/>
+          <rect x={bx-2}  y={HY-58} width={5} height={22} rx={1.5} fill="white"/>
+          <rect x={bx+6}  y={HY-52} width={5} height={16} rx={1.5} fill="white"/>
+          {/* Network graph nodes (colored) */}
+          <circle cx={bx-12} cy={HY-66} r={3}   fill="#4ade80"/>
+          <circle cx={bx}    cy={HY-71} r={3.5}  fill="#facc15"/>
+          <circle cx={bx+12} cy={HY-66} r={3}   fill="#f87171"/>
+          <circle cx={bx+18} cy={HY-62} r={2.5}  fill="#60a5fa"/>
+          <circle cx={bx-18} cy={HY-62} r={2.5}  fill="#c084fc"/>
+          {/* Connecting lines */}
+          <line x1={bx-12} y1={HY-66} x2={bx}    y2={HY-71} stroke="white" strokeWidth={1} opacity={0.45}/>
+          <line x1={bx}    y1={HY-71} x2={bx+12} y2={HY-66} stroke="white" strokeWidth={1} opacity={0.45}/>
+          <line x1={bx+12} y1={HY-66} x2={bx+18} y2={HY-62} stroke="white" strokeWidth={0.8} opacity={0.35}/>
+          <line x1={bx-12} y1={HY-66} x2={bx-18} y2={HY-62} stroke="white" strokeWidth={0.8} opacity={0.35}/>
+          <line x1={bx-18} y1={HY-62} x2={bx-12} y2={HY-70} stroke="white" strokeWidth={0.6} opacity={0.25}/>
+        </g>
+
+        {/* Shirt collar */}
         <path d={`M ${bx-10} ${HY-72} L ${bx} ${HY-62} L ${bx+10} ${HY-72}`}
           fill={SKD} opacity={0.45}/>
 
@@ -137,7 +176,7 @@ function TugChar({ team, bx, state }: { team:'left'|'right'; bx:number; state:CS
           <line key={`v${ox}`} x1={bx+ox} y1={HY-136} x2={bx+ox} y2={HY-163}
             stroke="white" strokeWidth={1.2} opacity={0.28}/>
         ))}
-        {[HY-143, HY-154].map((hy,i)=>(
+        {[HY-143,HY-154].map((hy,i)=>(
           <line key={`h${i}`} x1={bx-24} y1={hy} x2={bx+24} y2={hy}
             stroke="white" strokeWidth={0.8} opacity={0.2}/>
         ))}
@@ -161,10 +200,8 @@ function TugChar({ team, bx, state }: { team:'left'|'right'; bx:number; state:CS
           </>
         ) : state==='pulling' ? (
           <>
-            <path d={`M ${bx-18} ${HY-107} L ${bx-2} ${HY-111}`}
-              stroke={SKD} strokeWidth={5} strokeLinecap="round"/>
-            <path d={`M ${bx+2} ${HY-111} L ${bx+18} ${HY-107}`}
-              stroke={SKD} strokeWidth={5} strokeLinecap="round"/>
+            <path d={`M ${bx-18} ${HY-107} L ${bx-2} ${HY-111}`} stroke={SKD} strokeWidth={5} strokeLinecap="round"/>
+            <path d={`M ${bx+2} ${HY-111} L ${bx+18} ${HY-107}`} stroke={SKD} strokeWidth={5} strokeLinecap="round"/>
           </>
         ) : (
           <>
@@ -210,8 +247,7 @@ function TugChar({ team, bx, state }: { team:'left'|'right'; bx:number; state:CS
           <>
             <rect x={bx-13} y={HY-96} width={26} height={12} rx={4} fill="#2a1000"/>
             {[-7,0,7].map(o=>(
-              <line key={o} x1={bx+o} y1={HY-96} x2={bx+o} y2={HY-84}
-                stroke="white" strokeWidth={2.5}/>
+              <line key={o} x1={bx+o} y1={HY-96} x2={bx+o} y2={HY-84} stroke="white" strokeWidth={2.5}/>
             ))}
           </>
         ) : state==='slipping' ? (
@@ -221,13 +257,13 @@ function TugChar({ team, bx, state }: { team:'left'|'right'; bx:number; state:CS
             stroke="#333" strokeWidth={2.5} fill="none" strokeLinecap="round"/>
         )}
 
-        {/* State effects */}
+        {/* State FX */}
         {state==='pulling' && (
           <>
             {[-1,0,1].map(i=>(
               <line key={i}
                 x1={bx-rs*36+i*6} y1={HY-130+i*4}
-                x2={bx-rs*50+i*8} y2={HY-144+i*4}
+                x2={bx-rs*50+i*8} y2={HY-146+i*4}
                 stroke="#FBBF24" strokeWidth={3} strokeLinecap="round"/>
             ))}
             <path d={`M ${bx+rs*26} ${HY-118} Q ${bx+rs*30} ${HY-108} ${bx+rs*26} ${HY-102}`}
@@ -238,15 +274,13 @@ function TugChar({ team, bx, state }: { team:'left'|'right'; bx:number; state:CS
           <>
             <ellipse cx={bx-20} cy={HY-97} rx={11} ry={6} fill="#FF6B8A" opacity={0.55}/>
             <ellipse cx={bx+20} cy={HY-97} rx={11} ry={6} fill="#FF6B8A" opacity={0.55}/>
-            <text x={bx-12} y={HY-178} fontSize="26">🏆</text>
+            <text x={bx-13} y={HY-178} fontSize="26">🏆</text>
           </>
         )}
         {state==='lost' && (
           <>
-            <path d={`M ${bx-8} ${HY-96} Q ${bx-6} ${HY-80} ${bx-8} ${HY-66}`}
-              stroke="#3B82F6" strokeWidth={5} fill="none" strokeLinecap="round"/>
-            <path d={`M ${bx+8} ${HY-96} Q ${bx+10} ${HY-80} ${bx+8} ${HY-66}`}
-              stroke="#3B82F6" strokeWidth={5} fill="none" strokeLinecap="round"/>
+            <path d={`M ${bx-8} ${HY-96} Q ${bx-6} ${HY-80} ${bx-8} ${HY-66}`} stroke="#3B82F6" strokeWidth={5} fill="none" strokeLinecap="round"/>
+            <path d={`M ${bx+8} ${HY-96} Q ${bx+10} ${HY-80} ${bx+8} ${HY-66}`} stroke="#3B82F6" strokeWidth={5} fill="none" strokeLinecap="round"/>
           </>
         )}
         {state==='slipping' && (
@@ -255,13 +289,13 @@ function TugChar({ team, bx, state }: { team:'left'|'right'; bx:number; state:CS
           ))
         )}
 
-        {/* FRONT ARM */}
+        {/* FRONT ARM — toward rope (rendered last = on top) */}
         <path d={`M ${bx+rs*18} ${HY-64} C ${bx+rs*38} ${HY-56} ${bx+rs*56} ${HY-46} ${bx+rs*68} ${HY-40}`}
           stroke={SC} strokeWidth={20} fill="none" strokeLinecap="round"/>
-        <circle cx={bx+rs*68} cy={HY-40} r={12} fill={SKD}/>
+        {/* Fist gripping rope */}
+        <circle cx={bx+rs*68} cy={HY-40} r={13} fill={SKD}/>
         {[-4,0,4].map(o=>(
-          <ellipse key={o} cx={bx+rs*74+o*rs*0.2} cy={HY-34}
-            rx={4.5} ry={3} fill={SK} opacity={0.7}/>
+          <ellipse key={o} cx={bx+rs*74+o*rs*0.2} cy={HY-34} rx={4.5} ry={3} fill={SK} opacity={0.7}/>
         ))}
       </g>
     </g>
@@ -269,36 +303,50 @@ function TugChar({ team, bx, state }: { team:'left'|'right'; bx:number; state:CS
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ROPE — 3 braided sine-wave strands
+// ROPE — endpoints are COMPUTED from actual hand positions after rotation
+// Accepts lx,ly (left hand SVG pos) and rx,ry (right hand SVG pos)
 // ─────────────────────────────────────────────────────────────────────────────
-function TugRope({ rp }: { rp:number }) {
-  const sh = -rp * 14;
-  const lx = 388 + sh, rx = 612 + sh;
-  const ry = 228, sag = 8;
-  const mx = (lx+rx)/2, my = ry+sag;
+function TugRope({ lx, ly, rx, ry2 }: { lx:number; ly:number; rx:number; ry2:number }) {
+  const mx = (lx+rx)/2;
+  const sag = 16; // catenary sag at center
+  const my = (ly+ry2)/2 + sag;
+
+  const bezierPt = (t:number) => ({
+    x: (1-t)*(1-t)*lx + 2*(1-t)*t*mx + t*t*rx,
+    y: (1-t)*(1-t)*ly + 2*(1-t)*t*my + t*t*ry2,
+  });
 
   const strand = (phase:number, amp:number) => {
-    const N = 70;
+    const N=90;
     return Array.from({length:N+1},(_,i)=>{
-      const t=i/N;
-      const px=(1-t)*(1-t)*lx+2*(1-t)*t*mx+t*t*rx;
-      const py=(1-t)*(1-t)*ry+2*(1-t)*t*my+t*t*ry;
-      const off=Math.sin(t*Math.PI*16+phase)*amp;
-      return `${i===0?'M':'L'} ${px.toFixed(1)},${(py+off).toFixed(1)}`;
+      const t=i/N, {x,y}=bezierPt(t);
+      const off=Math.sin(t*Math.PI*20+phase)*amp;
+      return `${i===0?'M':'L'} ${x.toFixed(1)},${(y+off).toFixed(1)}`;
     }).join(' ');
   };
 
+  const base = `M ${lx},${ly} Q ${mx},${my} ${rx},${ry2}`;
+
   return (
     <g>
-      <path d={`M ${lx},${ry+6} Q ${mx},${my+6} ${rx},${ry+6}`}
-        stroke="rgba(0,0,0,0.38)" strokeWidth={30} fill="none" strokeLinecap="round"/>
-      <path d={`M ${lx},${ry} Q ${mx},${my} ${rx},${ry}`}
-        stroke="#1C0800" strokeWidth={26} fill="none" strokeLinecap="round"/>
-      <path d={strand(0,           4.5)} stroke="#6B3210" strokeWidth={12} fill="none" strokeLinecap="round"/>
-      <path d={strand(Math.PI*2/3, 4.5)} stroke="#9C4D1E" strokeWidth={11} fill="none" strokeLinecap="round"/>
-      <path d={strand(Math.PI*4/3, 4.5)} stroke="#C07038" strokeWidth={10} fill="none" strokeLinecap="round"/>
-      <path d={strand(Math.PI,    -3.5)} stroke="#D4A05A" strokeWidth={4}  fill="none" opacity={0.6} strokeLinecap="round"/>
-      <path d={strand(Math.PI,    -5)}   stroke="white"   strokeWidth={2}  fill="none" opacity={0.14} strokeLinecap="round"/>
+      {/* Drop shadow */}
+      <path d={base} stroke="rgba(0,0,0,0.55)" strokeWidth={36}
+        fill="none" strokeLinecap="round" transform="translate(0,6)"/>
+      {/* Dark bark base */}
+      <path d={base} stroke="#0D0400" strokeWidth={32} fill="none" strokeLinecap="round"/>
+      {/* 3 braided strands — 120° phase offset each */}
+      <path d={strand(0,           5.5)} stroke="#4A2008" strokeWidth={14} fill="none" strokeLinecap="round"/>
+      <path d={strand(Math.PI*2/3, 5.5)} stroke="#7A3810" strokeWidth={13} fill="none" strokeLinecap="round"/>
+      <path d={strand(Math.PI*4/3, 5.5)} stroke="#B05828" strokeWidth={12} fill="none" strokeLinecap="round"/>
+      {/* Warm highlight */}
+      <path d={strand(Math.PI,    -4.5)} stroke="#D4884A" strokeWidth={6}  fill="none" opacity={0.72} strokeLinecap="round"/>
+      {/* Gloss sheen */}
+      <path d={strand(Math.PI,    -6)}   stroke="white"   strokeWidth={2.5} fill="none" opacity={0.16} strokeLinecap="round"/>
+      {/* Rope end knot circles */}
+      <circle cx={lx} cy={ly} r={14} fill="#3A1C06" stroke="#7A3810" strokeWidth={3}/>
+      <circle cx={lx} cy={ly} r={8}  fill="#6B3210"/>
+      <circle cx={rx} cy={ry2} r={14} fill="#3A1C06" stroke="#7A3810" strokeWidth={3}/>
+      <circle cx={rx} cy={ry2} r={8}  fill="#6B3210"/>
     </g>
   );
 }
@@ -307,7 +355,7 @@ function TugRope({ rp }: { rp:number }) {
 // CONFETTI
 // ─────────────────────────────────────────────────────────────────────────────
 const CC=['#f59e0b','#10b981','#3b82f6','#ef4444','#a855f7','#ec4899','#ffffff'];
-const CONF=Array.from({length:34},(_,i)=>({
+const CONF=Array.from({length:36},(_,i)=>({
   id:i,x:Math.random()*100,delay:Math.random()*1.4,
   col:CC[i%CC.length],sz:6+Math.random()*8,rot:Math.random()*360,
 }));
@@ -321,26 +369,18 @@ export default function TugOfWar({
   const [phase,setPhase]   =useState<'difficulty'|'battle'|'ended'>('difficulty');
   const [diff, setDiff]    =useState<'easy'|'medium'|'hard'|'custom'>('medium');
   const [musicOn,setMusicOn]=useState(true);
-  const [rop,  setRop]     =useState(0);
+  const [rop,   setRop]    =useState(0);
   const WIN=12;
 
   const [words,setWords]=useState<WordPair[]>(MEDIUM);
-  const [lW,setLW]=useState(MEDIUM[0]);
-  const [lO,setLO]=useState<string[]>([]);
-  const [lFrz,setLFrz]=useState(false);
-  const [lPl,setLPl]=useState<WordPair[]>([]);
-  const [rW,setRW]=useState(MEDIUM[1]);
-  const [rO,setRO]=useState<string[]>([]);
-  const [rFrz,setRFrz]=useState(false);
-  const [rPl,setRPl]=useState<WordPair[]>([]);
-  const [lStr,setLStr]=useState(0);
-  const [rStr,setRStr]=useState(0);
-  const [lPull,setLPull]=useState(false);
-  const [rPull,setRPull]=useState(false);
-  const [lSlip,setLSlip]=useState(false);
-  const [rSlip,setRSlip]=useState(false);
-  const [shake,setShake]=useState(false);
-  const [showC,setShowC]=useState(false);
+  const [lW,setLW]=useState(MEDIUM[0]);  const [lO,setLO]=useState<string[]>([]);
+  const [lFrz,setLFrz]=useState(false);  const [lPl,setLPl]=useState<WordPair[]>([]);
+  const [rW,setRW]=useState(MEDIUM[1]);  const [rO,setRO]=useState<string[]>([]);
+  const [rFrz,setRFrz]=useState(false);  const [rPl,setRPl]=useState<WordPair[]>([]);
+  const [lStr,setLStr]=useState(0);      const [rStr,setRStr]=useState(0);
+  const [lPull,setLPull]=useState(false);const [rPull,setRPull]=useState(false);
+  const [lSlip,setLSlip]=useState(false);const [rSlip,setRSlip]=useState(false);
+  const [shake,setShake]=useState(false);const [showC,setShowC]=useState(false);
   const [lFx,setLFx]=useState<{id:number;text:string}[]>([]);
   const [rFx,setRFx]=useState<{id:number;text:string}[]>([]);
 
@@ -349,23 +389,28 @@ export default function TugOfWar({
     ref.current?.contentWindow?.postMessage(JSON.stringify({event:'command',func:fn,args:a}),'*');
   },[]);
 
+  // YouTube ready listener
   useEffect(()=>{
     const h=(e:MessageEvent)=>{
       try{
         const d=JSON.parse(typeof e.data==='string'?e.data:'{}');
-        if(d.event==='onReady'&&phase==='battle'&&musicOn){yt('unMute');yt('setVolume',[88]);}
+        if(d.event==='onReady'&&phase==='battle'&&musicOn){
+          yt('unMute');yt('setVolume',[88]);yt('playVideo');
+        }
       }catch{}
     };
     window.addEventListener('message',h);
     return()=>window.removeEventListener('message',h);
   },[phase,musicOn,yt]);
 
+  // Phase-triggered music — many retries to combat slow iframe load
   useEffect(()=>{
     if(phase==='battle'&&musicOn){
       yt('unMute');yt('setVolume',[88]);yt('playVideo');
-      const t1=setTimeout(()=>{yt('unMute');yt('setVolume',[88]);},600);
-      const t2=setTimeout(()=>{yt('unMute');yt('setVolume',[88]);},1400);
-      return()=>{clearTimeout(t1);clearTimeout(t2);};
+      const ts=[300,700,1300,2200,3500].map(ms=>
+        setTimeout(()=>{yt('unMute');yt('setVolume',[88]);yt('playVideo');},ms)
+      );
+      return()=>ts.forEach(clearTimeout);
     }
     yt('mute');
   },[phase,musicOn,yt]);
@@ -381,9 +426,11 @@ export default function TugOfWar({
   const go=(d:'easy'|'medium'|'hard'|'custom')=>{
     sound.playCorrect();setDiff(d);
     const ws=d==='easy'?EASY:d==='hard'?HARD:d==='custom'&&wordList?.length?wordList:MEDIUM;
-    setWords(ws);setPhase('battle');
+    setWords(ws);setPhase('battle');setRop(0);
     gq('l',ws,[...ws].sort(()=>Math.random()-.5));
     gq('r',ws,[...ws].sort(()=>Math.random()-.5));
+    // Unmute on user interaction (trusted event bypass)
+    setTimeout(()=>{yt('unMute');yt('setVolume',[88]);yt('playVideo');},200);
   };
   const gq=(side:'l'|'r',pool:WordPair[],cur:WordPair[])=>{
     let a=[...cur];if(!a.length)a=[...pool].sort(()=>Math.random()-.5);
@@ -445,17 +492,26 @@ export default function TugOfWar({
   const lSt:CS=phase==='ended'?(win==='l'?'won':'lost'):lPull?'pulling':lSlip?'slipping':'idle';
   const rSt:CS=phase==='ended'?(win==='r'?'won':'lost'):rPull?'pulling':rSlip?'slipping':'idle';
 
-  const LBX=[120,210,300];
-  const RBX=[880,790,700];
+  // Character base positions (BACK→FRONT per team)
+  const LBX=[120,210,300];  // left team
+  const RBX=[880,790,700];  // right team
+
+  // ── Compute rope endpoints from OUTERMOST chars' actual hand positions ──
+  const lLean=getLean(lSt,true);
+  const rLean=getLean(rSt,false);
+  const [lhx,lhy]=handPos(LBX[0]+sh, lLean,  1);  // bx=120, left team
+  const [rhx,rhy]=handPos(RBX[0]+sh, rLean, -1);  // bx=880, right team
+
+  // YouTube embed URL with origin for better CSP compatibility
+  const ytOrigin = typeof window!=='undefined' ? encodeURIComponent(window.location.origin) : '';
+  const ytSrc = `https://www.youtube.com/embed/g1YohGdFIXM?autoplay=1&loop=1&playlist=g1YohGdFIXM&controls=0&mute=1&enablejsapi=1&origin=${ytOrigin}`;
 
   return(
     <div className={`w-full max-w-6xl mx-auto px-2 py-2 select-none transition-transform duration-75 ${shake?'translate-x-0.5':''}`}>
 
-      {/* Music iframe — always mounted */}
-      <iframe ref={ref}
-        src="https://www.youtube.com/embed/g1YohGdFIXM?autoplay=1&loop=1&playlist=g1YohGdFIXM&controls=0&mute=1&enablejsapi=1"
-        allow="autoplay" title="music"
-        className="absolute top-0 left-0 w-0 h-0 pointer-events-none opacity-0"/>
+      {/* Music iframe — always mounted, pre-buffers */}
+      <iframe ref={ref} src={ytSrc} allow="autoplay"
+        title="music" className="absolute top-0 left-0 w-0 h-0 pointer-events-none opacity-0"/>
 
       {/* ── DIFFICULTY SCREEN ── */}
       {phase==='difficulty'&&(
@@ -506,6 +562,7 @@ export default function TugOfWar({
       {/* ── BATTLE / ENDED ── */}
       {(phase==='battle'||phase==='ended')&&(
         <div className="space-y-3">
+          {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-800 pb-2 px-1">
             <div className="flex items-center gap-2">
               <span className="text-xl">{teamLeft.emoji}</span>
@@ -565,26 +622,22 @@ export default function TugOfWar({
             </div>
 
             <svg viewBox="0 0 1000 340" className="w-full"
-              style={{maxHeight:400,background:'linear-gradient(180deg,#050520 0%,#0c1a5e 55%,#1a0a2e 100%)'}}>
+              style={{maxHeight:420,background:'linear-gradient(180deg,#050520 0%,#0c1a5e 55%,#1a0a2e 100%)'}}>
               <defs>
-                <radialGradient id="spot2" cx="50%" cy="30%" r="55%">
-                  <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.12"/>
+                <radialGradient id="sp3" cx="50%" cy="30%" r="55%">
+                  <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.14"/>
                   <stop offset="100%" stopColor="transparent"/>
                 </radialGradient>
-                <linearGradient id="grass2" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="gr3" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#16a34a"/><stop offset="100%" stopColor="#14532d"/>
                 </linearGradient>
               </defs>
-
-              <rect width="1000" height="340" fill="url(#spot2)"/>
-
+              <rect width="1000" height="340" fill="url(#sp3)"/>
               {[60,130,200,280,360,440,520,600,680,760,840,920].map((sx,i)=>(
-                <circle key={i} cx={sx} cy={8+i*5%35} r={i%4===0?2.2:1.1}
-                  fill="white" opacity={0.2+i%3*0.15}/>
+                <circle key={i} cx={sx} cy={8+i*5%35} r={i%4===0?2.2:1.1} fill="white" opacity={0.2+i%3*0.15}/>
               ))}
-
-              {Array.from({length:26},(_,i)=>{
-                const cx=20+i*37,cy=222-Math.abs(Math.sin(i)*7);
+              {Array.from({length:28},(_,i)=>{
+                const cx=12+i*35, cy=222-Math.abs(Math.sin(i)*7);
                 const c=['#3b82f6','#ef4444','#10b981','#a855f7','#f59e0b'][i%5];
                 return <g key={i}>
                   <ellipse cx={cx} cy={cy+22} rx={11} ry={4} fill={c} opacity={0.28}/>
@@ -592,23 +645,17 @@ export default function TugOfWar({
                   <circle cx={cx} cy={cy-9} r={9} fill={c} opacity={0.4}/>
                 </g>;
               })}
-
-              <rect x="0" y="308" width="1000" height="32" fill="url(#grass2)"/>
+              <rect x="0" y="308" width="1000" height="32" fill="url(#gr3)"/>
               <rect x="0" y="316" width="1000" height="24" fill="#713f12" opacity={0.55}/>
-
               <line x1="190" y1="230" x2="190" y2="308" stroke="#60a5fa" strokeWidth={2} strokeDasharray="5,4" opacity={0.4}/>
               <line x1="810" y1="230" x2="810" y2="308" stroke="#f87171" strokeWidth={2} strokeDasharray="5,4" opacity={0.4}/>
 
-              {/* Back characters */}
-              {LBX.slice(0,2).map(b=><TugChar key={b} team="left"  bx={b+sh} state={lSt}/>)}
-              {RBX.slice(0,2).map(b=><TugChar key={b} team="right" bx={b+sh} state={rSt}/>)}
+              {/* Rope FIRST (behind all characters) */}
+              <TugRope lx={lhx} ly={lhy} rx={rhx} ry2={rhy}/>
 
-              {/* Rope (over rear chars, under front chars) */}
-              <TugRope rp={rop}/>
-
-              {/* Front characters (on top of rope) */}
-              <TugChar team="left"  bx={LBX[2]+sh} state={lSt}/>
-              <TugChar team="right" bx={RBX[2]+sh} state={rSt}/>
+              {/* ALL characters on top of rope — back to front */}
+              {LBX.map(b=><TugChar key={`l${b}`} team="left"  bx={b+sh} state={lSt}/>)}
+              {RBX.map(b=><TugChar key={`r${b}`} team="right" bx={b+sh} state={rSt}/>)}
 
               {/* Center flag */}
               <line x1={flagX} y1="256" x2={flagX} y2="310" stroke="#FBBF24" strokeWidth={4}/>
@@ -633,62 +680,39 @@ export default function TugOfWar({
           {/* TERMINALS */}
           {phase==='battle'&&(
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-              <div className={`p-5 rounded-3xl border-2 transition-all ${lFrz?'bg-rose-950/30 border-rose-500/60':'bg-slate-900/90 border-blue-500/40'}`}>
-                <div className="flex justify-between items-center border-b border-slate-800 pb-2 mb-4">
-                  <span style={{color:teamLeft.color}} className="text-xs font-black uppercase">{teamLeft.emoji} {teamLeft.name}</span>
-                  <span className="text-[9px] text-slate-500 font-mono">TERMINAL A</span>
+              {[
+                {side:'l' as const, frz:lFrz, w:lW, o:lO, fn:ansL, team:teamLeft, bord:'border-blue-500/40', qcol:'text-blue-400', qbord:'border-blue-500/20', hbord:'border-blue-500', hcol:'hover:text-blue-300', hbg:'hover:bg-blue-950/40', label:'TERMINAL A'},
+                {side:'r' as const, frz:rFrz, w:rW, o:rO, fn:ansR, team:teamRight,bord:'border-red-500/40',  qcol:'text-red-400',  qbord:'border-red-500/20',  hbord:'border-red-500',  hcol:'hover:text-red-300',  hbg:'hover:bg-red-950/40',  label:'TERMINAL B'},
+              ].map(({side,frz,w,o,fn,team,bord,qcol,qbord,hbord,hcol,hbg,label})=>(
+                <div key={side} className={`p-5 rounded-3xl border-2 transition-all ${frz?'bg-rose-950/30 border-rose-500/60':`bg-slate-900/90 ${bord}`}`}>
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-2 mb-4">
+                    <span style={{color:team.color}} className="text-xs font-black uppercase">{team.emoji} {team.name}</span>
+                    <span className="text-[9px] text-slate-500 font-mono">{label}</span>
+                  </div>
+                  {frz?(
+                    <div className="h-[188px] flex flex-col items-center justify-center gap-3">
+                      <AlertCircle className="w-12 h-12 text-rose-500 animate-bounce"/>
+                      <h4 className="font-black text-rose-400 text-sm">XATO JAVOB! 😱</h4>
+                      <p className="text-[10px] text-slate-400">1.5s kutish...</p>
+                    </div>
+                  ):(
+                    <div className="space-y-4">
+                      <div className={`bg-slate-950 py-4 px-5 rounded-2xl border ${qbord}`}>
+                        <span className={`${qcol} text-[9px] uppercase font-black block mb-1`}>🔤 INGLIZCHASI NIMA?</span>
+                        <h3 className="text-lg md:text-xl font-black text-white uppercase">{w.uz}</h3>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {o.map((opt,i)=>(
+                          <button key={i} onClick={()=>fn(opt)}
+                            className={`bg-slate-950 ${hbg} border border-slate-800 ${hbord} ${hcol} p-3 md:p-4 rounded-xl text-[11px] md:text-xs font-black text-white transition-all uppercase cursor-pointer active:scale-95`}>
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {lFrz?(
-                  <div className="h-[188px] flex flex-col items-center justify-center gap-3">
-                    <AlertCircle className="w-12 h-12 text-rose-500 animate-bounce"/>
-                    <h4 className="font-black text-rose-400 text-sm">XATO JAVOB! 😱</h4>
-                    <p className="text-[10px] text-slate-400">1.5s kutish...</p>
-                  </div>
-                ):(
-                  <div className="space-y-4">
-                    <div className="bg-slate-950 py-4 px-5 rounded-2xl border border-blue-500/20">
-                      <span className="text-blue-400 text-[9px] uppercase font-black block mb-1">🔤 INGLIZCHASI NIMA?</span>
-                      <h3 className="text-lg md:text-xl font-black text-white uppercase">{lW.uz}</h3>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      {lO.map((o,i)=>(
-                        <button key={i} onClick={()=>ansL(o)}
-                          className="bg-slate-950 hover:bg-blue-950/40 border border-slate-800 hover:border-blue-500 hover:text-blue-300 p-3 md:p-4 rounded-xl text-[11px] md:text-xs font-black text-white transition-all uppercase cursor-pointer active:scale-95">
-                          {o}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className={`p-5 rounded-3xl border-2 transition-all ${rFrz?'bg-rose-950/30 border-rose-500/60':'bg-slate-900/90 border-red-500/40'}`}>
-                <div className="flex justify-between items-center border-b border-slate-800 pb-2 mb-4">
-                  <span style={{color:teamRight.color}} className="text-xs font-black uppercase">{teamRight.emoji} {teamRight.name}</span>
-                  <span className="text-[9px] text-slate-500 font-mono">TERMINAL B</span>
-                </div>
-                {rFrz?(
-                  <div className="h-[188px] flex flex-col items-center justify-center gap-3">
-                    <AlertCircle className="w-12 h-12 text-rose-500 animate-bounce"/>
-                    <h4 className="font-black text-rose-400 text-sm">XATO JAVOB! 😱</h4>
-                    <p className="text-[10px] text-slate-400">1.5s kutish...</p>
-                  </div>
-                ):(
-                  <div className="space-y-4">
-                    <div className="bg-slate-950 py-4 px-5 rounded-2xl border border-red-500/20">
-                      <span className="text-red-400 text-[9px] uppercase font-black block mb-1">🔤 INGLIZCHASI NIMA?</span>
-                      <h3 className="text-lg md:text-xl font-black text-white uppercase">{rW.uz}</h3>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      {rO.map((o,i)=>(
-                        <button key={i} onClick={()=>ansR(o)}
-                          className="bg-slate-950 hover:bg-red-950/40 border border-slate-800 hover:border-red-500 hover:text-red-300 p-3 md:p-4 rounded-xl text-[11px] md:text-xs font-black text-white transition-all uppercase cursor-pointer active:scale-95">
-                          {o}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
           )}
 
@@ -703,9 +727,7 @@ export default function TugOfWar({
               </motion.div>
               <div>
                 <span className="text-[10px] text-yellow-500 font-extrabold tracking-widest uppercase block">🎊 MUSOBAQA YAKUNLANDI!</span>
-                <h3 className="text-3xl font-black text-white uppercase mt-2">
-                  {win==='l'?teamLeft.name:teamRight.name}
-                </h3>
+                <h3 className="text-3xl font-black text-white uppercase mt-2">{win==='l'?teamLeft.name:teamRight.name}</h3>
                 <p className="text-xl font-black text-yellow-400 mt-1">G'ALABA QOZONDI! 🏆</p>
               </div>
               <div className="flex justify-center gap-4 text-4xl">
