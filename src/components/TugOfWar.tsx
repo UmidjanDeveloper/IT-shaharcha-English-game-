@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameDifficulty, Team, WordPair } from '../types';
 import { sound } from '../utils/audio';
-import { Volume2, VolumeX, Swords, Sparkles, AlertCircle, Trophy, Zap, Info } from 'lucide-react';
+import { Volume2, VolumeX, Swords, Sparkles, AlertCircle, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface TugOfWarProps {
@@ -21,9 +21,9 @@ const EASY_WORDS: WordPair[] = [
   { uz: 'Qaror qabul qilmoq', en: 'Decide' }, { uz: 'Yaxshilamoq', en: 'Improve' },
   { uz: 'Muallif', en: 'Author' }, { uz: 'Kashf qilmoq', en: 'Discover' },
   { uz: 'Maslahat bermoq', en: 'Advise' }, { uz: 'Niyat', en: 'Purpose' },
-  { uz: 'Erishmoq', en: 'Achieve' }, { uz: 'Ta\'sir qilmoq', en: 'Influence' },
-  { uz: 'Tavsiya qilmoq', en: 'Recommend' }, { uz: 'G\'alaba', en: 'Victory' },
-  { uz: 'Tasvirlamoq', en: 'Describe' }, { uz: 'Solishtirmoq', en: 'Compare' },
+  { uz: 'Erishmoq', en: 'Achieve' }, { uz: 'Tavsiya qilmoq', en: 'Recommend' },
+  { uz: "G'alaba", en: 'Victory' }, { uz: 'Tasvirlamoq', en: 'Describe' },
+  { uz: 'Solishtirmoq', en: 'Compare' }, { uz: "Ta'sir qilmoq", en: 'Influence' },
 ];
 const MEDIUM_WORDS: WordPair[] = [
   { uz: 'Tergov qilmoq', en: 'Investigate' }, { uz: 'Cheklamoq', en: 'Restrict' },
@@ -32,7 +32,7 @@ const MEDIUM_WORDS: WordPair[] = [
   { uz: 'Moslashmoq', en: 'Adapt' }, { uz: 'Ziddiyat', en: 'Conflict' },
   { uz: 'Raqobatlashmoq', en: 'Compete' }, { uz: 'Kafolatlamoq', en: 'Guarantee' },
   { uz: 'Foyda keltiradigan', en: 'Beneficial' }, { uz: 'Faraz qilmoq', en: 'Assume' },
-  { uz: 'Xabardorlik', en: 'Awareness' }, { uz: 'Hissa qo\'shmoq', en: 'Contribute' },
+  { uz: 'Xabardorlik', en: 'Awareness' }, { uz: "Hissa qo'shmoq", en: 'Contribute' },
   { uz: 'Baholash', en: 'Assessment' }, { uz: 'Hamkorlik qilmoq', en: 'Collaborate' },
   { uz: 'Izchil', en: 'Consistent' }, { uz: 'Kengaytirish', en: 'Expand' },
   { uz: 'Tahlil qilmoq', en: 'Analyze' }, { uz: 'Tasdiqlamoq', en: 'Confirm' },
@@ -40,454 +40,568 @@ const MEDIUM_WORDS: WordPair[] = [
 const HARD_WORDS: WordPair[] = [
   { uz: 'Hamma joyda mavjud', en: 'Ubiquitous' }, { uz: 'Fikrlash tarzi', en: 'Paradigm' },
   { uz: 'Xulosa chiqarmoq', en: 'Extrapolate' }, { uz: 'Yarashtirish', en: 'Reconcile' },
-  { uz: 'Yonma-yon qo\'yish', en: 'Juxtapose' }, { uz: 'Vazminlik', en: 'Equanimity' },
+  { uz: "Yonma-yon qo'yish", en: 'Juxtapose' }, { uz: 'Vazminlik', en: 'Equanimity' },
   { uz: 'Murakkab jumboq', en: 'Conundrum' }, { uz: 'Maqtovga loyiq', en: 'Meritorious' },
-  { uz: 'Dalillar bilan isbotlamoq', en: 'Substantiate' }, { uz: 'O\'tkinchi', en: 'Ephemeral' },
+  { uz: "Dalillar bilan isbotlamoq", en: 'Substantiate' }, { uz: "O'tkinchi", en: 'Ephemeral' },
   { uz: 'Pinhona', en: 'Surreptitious' }, { uz: 'Zerikarli', en: 'Monotonous' },
-  { uz: 'Chuqur bilim', en: 'Erudition' }, { uz: 'Eng yuqori cho\'qqi', en: 'Zenith' },
+  { uz: 'Chuqur bilim', en: 'Erudition' }, { uz: "Eng yuqori cho'qqi", en: 'Zenith' },
   { uz: 'Mavhum', en: 'Obscure' }, { uz: 'Chechanlik', en: 'Eloquence' },
-  { uz: 'Chidamli', en: 'Resilient' }, { uz: 'Inkor etib bo\'lmaydigan', en: 'Irrefutable' },
-  { uz: 'Amaliy', en: 'Pragmatic' }, { uz: 'G\'ayratli', en: 'Assiduous' },
+  { uz: 'Chidamli', en: 'Resilient' }, { uz: "Inkor etib bo'lmaydigan", en: 'Irrefutable' },
+  { uz: 'Amaliy', en: 'Pragmatic' }, { uz: "G'ayratli", en: 'Assiduous' },
 ];
 
 type Difficulty = 'easy' | 'medium' | 'hard' | 'custom';
 type CharState = 'idle' | 'pulling' | 'slipping' | 'won' | 'lost';
 
-// --- Confetti ---
-const CONFETTI_COLORS = ['#f59e0b','#10b981','#3b82f6','#ef4444','#a855f7','#ec4899','#fff'];
-const confettiPieces = Array.from({ length: 30 }, (_, i) => ({
-  id: i,
-  x: Math.random() * 100,
-  delay: Math.random() * 1.5,
-  color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-  size: 6 + Math.random() * 8,
-  rotation: Math.random() * 360,
+const CONFETTI_COLS = ['#f59e0b','#10b981','#3b82f6','#ef4444','#a855f7','#ec4899','#fff'];
+const confettiItems = Array.from({ length: 28 }, (_, i) => ({
+  id: i, x: Math.random() * 100, delay: Math.random() * 1.2,
+  col: CONFETTI_COLS[i % CONFETTI_COLS.length], sz: 6 + Math.random() * 8, rot: Math.random() * 360,
 }));
 
-export default function TugOfWar({ teamLeft, teamRight, wordList, selectedDifficulty, onGameWin, onUpdateScore }: TugOfWarProps) {
-  const [phase, setPhase] = useState<'difficulty' | 'battle' | 'ended'>('difficulty');
-  const [difficulty, setDifficulty] = useState<Difficulty>(
-    selectedDifficulty === 'beginner' ? 'easy' : selectedDifficulty === 'advanced' ? 'hard' : 'medium'
-  );
-  const [isMusicPlaying, setIsMusicPlaying] = useState(true);
-  const [ropePosition, setRopePosition] = useState(0);
-  const WIN_THRESHOLD = 12;
-  const [activeWords, setActiveWords] = useState<WordPair[]>(MEDIUM_WORDS);
-  const [leftWord, setLeftWord] = useState<WordPair>(MEDIUM_WORDS[0]);
-  const [leftOptions, setLeftOptions] = useState<string[]>([]);
-  const [leftFrozen, setLeftFrozen] = useState(false);
-  const [rightWord, setRightWord] = useState<WordPair>(MEDIUM_WORDS[1]);
-  const [rightOptions, setRightOptions] = useState<string[]>([]);
-  const [rightFrozen, setRightFrozen] = useState(false);
-  const [isLeftPulling, setIsLeftPulling] = useState(false);
-  const [isRightPulling, setIsRightPulling] = useState(false);
-  const [arenaShake, setArenaShake] = useState(false);
-  const [leftSuccessStreak, setLeftSuccessStreak] = useState(0);
-  const [rightSuccessStreak, setRightSuccessStreak] = useState(0);
-  const [isLeftSlipping, setIsLeftSlipping] = useState(false);
-  const [isRightSlipping, setIsRightSlipping] = useState(false);
-  const [leftRemainingPool, setLeftRemainingPool] = useState<WordPair[]>([]);
-  const [rightRemainingPool, setRightRemainingPool] = useState<WordPair[]>([]);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [leftFloatEffects, setLeftFloatEffects] = useState<{ id: number; text: string }[]>([]);
-  const [rightFloatEffects, setRightFloatEffects] = useState<{ id: number; text: string }[]>([]);
-  const musicRef = useRef<HTMLIFrameElement>(null);
+// ─────────────────────────────────────────────────────────────
+// CHARACTER
+// ─────────────────────────────────────────────────────────────
+function TugChar({ team, baseX, state }: { team: 'left'|'right'; baseX: number; state: CharState }) {
+  const L  = team === 'left';
+  const rs = L ? 1 : -1;
 
-  const ytCommand = (func: string, args: unknown[] = []) => {
-    musicRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), '*');
-  };
+  const shirt  = L ? '#1d4ed8' : '#b91c1c';
+  const shirtH = L ? '#60a5fa' : '#f87171';
+  const shirtD = L ? '#1e3a8a' : '#7f1d1d';
+  const pants  = L ? '#1e3a5f' : '#4c0519';
+  const pantsD = L ? '#0f1f38' : '#2d0210';
+  const skin   = '#F5C48A';
+  const skinD  = '#C8853A';
+  const hair   = '#1A0800';
+  const shoe   = '#1a1a1a';
+  const shoeH  = '#3d3d3d';
 
-  useEffect(() => {
-    return () => { try { if (musicRef.current) musicRef.current.src = 'about:blank'; } catch {} };
-  }, []);
+  let lean = L ? -6 : 6;
+  let oy   = 0;
+  if (state === 'pulling')  { lean = L ? -22 : 22; oy = 8;  }
+  if (state === 'slipping') { lean = L ? 30 : -30; oy = -4; }
+  if (state === 'won')      { lean = 0; oy = -16; }
+  if (state === 'lost')     { lean = L ? 18 : -18; oy = 12; }
 
-  useEffect(() => {
-    if (phase === 'battle' && isMusicPlaying) {
-      ytCommand('unMute'); ytCommand('setVolume', [80]);
-      const t = setTimeout(() => { ytCommand('unMute'); ytCommand('setVolume', [80]); }, 800);
-      return () => clearTimeout(t);
-    }
-    if (phase === 'ended') ytCommand('mute');
-  }, [phase]);
+  const GY   = 310;
+  const hx   = baseX + lean * 0.65;
+  const hy   = GY - 215 + oy;
+  const shY  = hy + 38;
+  const waY  = shY + 56;
+  const hipY = waY + 18;
+  const knY  = hipY + 44;
 
-  useEffect(() => {
-    if (isMusicPlaying && phase === 'battle') { ytCommand('unMute'); ytCommand('setVolume', [80]); ytCommand('playVideo'); }
-    else ytCommand('mute');
-  }, [isMusicPlaying]);
+  const sp  = state === 'won' ? 16 : state === 'pulling' ? 10 : 0;
+  const fLx = baseX - 22 - sp * 0.4;
+  const fRx = baseX + 22 + sp * 0.4;
 
-  useEffect(() => {
-    if (phase === 'difficulty' && selectedDifficulty && selectedDifficulty !== 'custom') {
-      const d = selectedDifficulty === 'beginner' ? 'easy' : selectedDifficulty === 'advanced' ? 'hard' : 'medium';
-      handleStartBattle(d);
-    }
-  }, [selectedDifficulty]);
+  // Arm positions
+  let peX: number, peY: number, phX: number, phY: number;
+  let beX: number, beY: number, bhX: number, bhY: number;
 
-  const handleStartBattle = (d: Difficulty) => {
-    sound.playCorrect(); setDifficulty(d);
-    let words = MEDIUM_WORDS;
-    if (d === 'easy') words = EASY_WORDS;
-    if (d === 'hard') words = HARD_WORDS;
-    if (d === 'custom' && wordList?.length > 0) words = wordList;
-    setActiveWords(words); setPhase('battle');
-    const sl = [...words].sort(() => Math.random() - 0.5);
-    const sr = [...words].sort(() => Math.random() - 0.5);
-    generateQ('left', words, sl); generateQ('right', words, sr);
-  };
+  if (state === 'won') {
+    peX = hx+46; peY = shY-20; phX = hx+54; phY = shY-44;
+    beX = hx-46; beY = shY-20; bhX = hx-54; bhY = shY-44;
+  } else if (state === 'lost') {
+    peX = hx+rs*24; peY = shY+42; phX = hx+rs*20; phY = shY+70;
+    beX = hx-rs*18; beY = shY+38; bhX = hx-rs*16; bhY = shY+66;
+  } else if (state === 'pulling') {
+    peX = hx+rs*54; peY = shY+20; phX = hx+rs*88; phY = shY+14;
+    beX = hx-rs*28; beY = shY+28; bhX = hx-rs*40; bhY = shY+50;
+  } else if (state === 'slipping') {
+    peX = hx+rs*38; peY = shY+2;  phX = hx+rs*62; phY = shY-16;
+    beX = hx-rs*38; beY = shY+2;  bhX = hx-rs*60; bhY = shY-12;
+  } else {
+    peX = hx+rs*46; peY = shY+22; phX = hx+rs*74; phY = shY+16;
+    beX = hx-rs*24; beY = shY+25; bhX = hx-rs*36; bhY = shY+46;
+  }
 
-  const generateQ = (team: 'left' | 'right', pool: WordPair[], current: WordPair[]) => {
-    let active = [...current];
-    if (active.length === 0) active = [...pool].sort(() => Math.random() - 0.5);
-    const item = active.pop()!;
-    const dist = pool.filter(w => w.en !== item.en).map(w => w.en).sort(() => Math.random() - 0.5).slice(0, 3);
-    const opts = [item.en, ...dist].sort(() => Math.random() - 0.5);
-    if (team === 'left') { setLeftRemainingPool(active); setLeftWord(item); setLeftOptions(opts); }
-    else { setRightRemainingPool(active); setRightWord(item); setRightOptions(opts); }
-  };
+  // Face coords
+  const eLx = hx-12, eRx = hx+12, eY = hy+3;
 
-  const handleLeftAnswer = (opt: string) => {
-    if (leftFrozen || phase !== 'battle') return;
-    if (opt === leftWord.en) {
-      sound.playCorrect();
-      const streak = leftSuccessStreak + 1; setLeftSuccessStreak(streak);
-      setIsLeftPulling(true); setArenaShake(true);
-      setTimeout(() => setIsLeftPulling(false), 600);
-      setTimeout(() => setArenaShake(false), 300);
-      const force = streak >= 2 ? 1.5 : 1;
-      const txt = streak >= 2 ? `🔥 COMBO x${streak}!` : '💪 TO\'G\'RI!';
-      setLeftFloatEffects(p => [...p, { id: Date.now(), text: txt }]);
-      setTimeout(() => setLeftFloatEffects(p => p.slice(1)), 1500);
-      const next = Math.max(-WIN_THRESHOLD, ropePosition - force);
-      setRopePosition(next);
-      if (next <= -WIN_THRESHOLD) { handleEndGame('left'); }
-      else { generateQ('left', activeWords, leftRemainingPool); }
-    } else {
-      sound.playIncorrect(); setLeftSuccessStreak(0);
-      setLeftFrozen(true); setIsLeftSlipping(true);
-      setLeftFloatEffects(p => [...p, { id: Date.now(), text: '😱 XATO!' }]);
-      setTimeout(() => setLeftFloatEffects(p => p.slice(1)), 1500);
-      const next = Math.min(WIN_THRESHOLD, ropePosition + 3);
-      setRopePosition(next);
-      if (next >= WIN_THRESHOLD) { handleEndGame('right'); }
-      else { setTimeout(() => { setLeftFrozen(false); setIsLeftSlipping(false); generateQ('left', activeWords, leftRemainingPool); }, 1500); }
-    }
-  };
+  // ── Eyes ──
+  let eyes: React.ReactNode;
+  if (state === 'won') {
+    eyes = <>
+      <path d={`M ${eLx-9} ${eY+3} Q ${eLx} ${eY-8} ${eLx+9} ${eY+3}`} stroke={hair} strokeWidth="3" fill={skin} strokeLinecap="round"/>
+      <path d={`M ${eRx-9} ${eY+3} Q ${eRx} ${eY-8} ${eRx+9} ${eY+3}`} stroke={hair} strokeWidth="3" fill={skin} strokeLinecap="round"/>
+    </>;
+  } else if (state === 'lost') {
+    eyes = <>
+      <ellipse cx={eLx} cy={eY+1} rx="9" ry="10" fill="white" stroke="#D0B090" strokeWidth="1"/>
+      <circle cx={eLx} cy={eY+3} r="6" fill="#5D3A1A"/>
+      <circle cx={eLx} cy={eY+3} r="3.5" fill="#0A0A0A"/>
+      <circle cx={eLx+2} cy={eY+1} r="1.8" fill="white"/>
+      <ellipse cx={eRx} cy={eY+1} rx="9" ry="10" fill="white" stroke="#D0B090" strokeWidth="1"/>
+      <circle cx={eRx} cy={eY+3} r="6" fill="#5D3A1A"/>
+      <circle cx={eRx} cy={eY+3} r="3.5" fill="#0A0A0A"/>
+      <circle cx={eRx+2} cy={eY+1} r="1.8" fill="white"/>
+      <path d={`M ${eLx+2} ${eY+11} Q ${eLx} ${eY+23} ${eLx+4} ${eY+33}`} stroke="#93C5FD" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+      <path d={`M ${eRx-2} ${eY+11} Q ${eRx} ${eY+23} ${eRx-4} ${eY+33}`} stroke="#93C5FD" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+    </>;
+  } else if (state === 'pulling') {
+    eyes = <>
+      <path d={`M ${eLx-9} ${eY+4} L ${eLx+9} ${eY+4}`} stroke={hair} strokeWidth="4.5" strokeLinecap="round"/>
+      <path d={`M ${eRx-9} ${eY+4} L ${eRx+9} ${eY+4}`} stroke={hair} strokeWidth="4.5" strokeLinecap="round"/>
+    </>;
+  } else if (state === 'slipping') {
+    eyes = <>
+      <circle cx={eLx} cy={eY} r="12" fill="white" stroke={hair} strokeWidth="1.5"/>
+      <circle cx={eLx} cy={eY} r="7" fill="#5D3A1A"/>
+      <circle cx={eLx} cy={eY} r="4" fill="#0A0A0A"/>
+      <circle cx={eLx+2.5} cy={eY-2} r="2" fill="white"/>
+      <circle cx={eRx} cy={eY} r="12" fill="white" stroke={hair} strokeWidth="1.5"/>
+      <circle cx={eRx} cy={eY} r="7" fill="#5D3A1A"/>
+      <circle cx={eRx} cy={eY} r="4" fill="#0A0A0A"/>
+      <circle cx={eRx+2.5} cy={eY-2} r="2" fill="white"/>
+    </>;
+  } else {
+    eyes = <>
+      <ellipse cx={eLx} cy={eY} rx="9" ry="11" fill="white" stroke="#D0B090" strokeWidth="1"/>
+      <circle cx={eLx+rs*0.5} cy={eY+1} r="6" fill="#5D3A1A"/>
+      <circle cx={eLx+rs*0.5} cy={eY+1} r="3.5" fill="#0A0A0A"/>
+      <circle cx={eLx+rs*0.5+2} cy={eY-1} r="1.8" fill="white"/>
+      <ellipse cx={eRx} cy={eY} rx="9" ry="11" fill="white" stroke="#D0B090" strokeWidth="1"/>
+      <circle cx={eRx+rs*0.5} cy={eY+1} r="6" fill="#5D3A1A"/>
+      <circle cx={eRx+rs*0.5} cy={eY+1} r="3.5" fill="#0A0A0A"/>
+      <circle cx={eRx+rs*0.5+2} cy={eY-1} r="1.8" fill="white"/>
+    </>;
+  }
 
-  const handleRightAnswer = (opt: string) => {
-    if (rightFrozen || phase !== 'battle') return;
-    if (opt === rightWord.en) {
-      sound.playCorrect();
-      const streak = rightSuccessStreak + 1; setRightSuccessStreak(streak);
-      setIsRightPulling(true); setArenaShake(true);
-      setTimeout(() => setIsRightPulling(false), 600);
-      setTimeout(() => setArenaShake(false), 300);
-      const force = streak >= 2 ? 1.5 : 1;
-      const txt = streak >= 2 ? `🔥 COMBO x${streak}!` : '💪 TO\'G\'RI!';
-      setRightFloatEffects(p => [...p, { id: Date.now(), text: txt }]);
-      setTimeout(() => setRightFloatEffects(p => p.slice(1)), 1500);
-      const next = Math.min(WIN_THRESHOLD, ropePosition + force);
-      setRopePosition(next);
-      if (next >= WIN_THRESHOLD) { handleEndGame('right'); }
-      else { generateQ('right', activeWords, rightRemainingPool); }
-    } else {
-      sound.playIncorrect(); setRightSuccessStreak(0);
-      setRightFrozen(true); setIsRightSlipping(true);
-      setRightFloatEffects(p => [...p, { id: Date.now(), text: '😱 XATO!' }]);
-      setTimeout(() => setRightFloatEffects(p => p.slice(1)), 1500);
-      const next = Math.max(-WIN_THRESHOLD, ropePosition - 3);
-      setRopePosition(next);
-      if (next <= -WIN_THRESHOLD) { handleEndGame('left'); }
-      else { setTimeout(() => { setRightFrozen(false); setIsRightSlipping(false); generateQ('right', activeWords, rightRemainingPool); }, 1500); }
-    }
-  };
+  // ── Brows ──
+  let brows: React.ReactNode;
+  if (state === 'won') {
+    brows = <>
+      <path d={`M ${eLx-10} ${eY-16} Q ${eLx} ${eY-22} ${eLx+10} ${eY-16}`} stroke={hair} strokeWidth="4" fill="none" strokeLinecap="round"/>
+      <path d={`M ${eRx-10} ${eY-16} Q ${eRx} ${eY-22} ${eRx+10} ${eY-16}`} stroke={hair} strokeWidth="4" fill="none" strokeLinecap="round"/>
+    </>;
+  } else if (state === 'lost') {
+    brows = <>
+      <path d={`M ${eLx-8} ${eY-13} Q ${eLx} ${eY-8} ${eLx+8} ${eY-13}`} stroke={hair} strokeWidth="4" fill="none" strokeLinecap="round"/>
+      <path d={`M ${eRx-8} ${eY-13} Q ${eRx} ${eY-8} ${eRx+8} ${eY-13}`} stroke={hair} strokeWidth="4" fill="none" strokeLinecap="round"/>
+    </>;
+  } else if (state === 'pulling') {
+    brows = <>
+      <line x1={eLx-9} y1={eY-10} x2={eLx+9} y2={eY-15} stroke={hair} strokeWidth="4.5" strokeLinecap="round"/>
+      <line x1={eRx-9} y1={eY-15} x2={eRx+9} y2={eY-10} stroke={hair} strokeWidth="4.5" strokeLinecap="round"/>
+    </>;
+  } else if (state === 'slipping') {
+    brows = <>
+      <path d={`M ${eLx-10} ${eY-18} Q ${eLx} ${eY-24} ${eLx+10} ${eY-18}`} stroke={hair} strokeWidth="4" fill="none" strokeLinecap="round"/>
+      <path d={`M ${eRx-10} ${eY-18} Q ${eRx} ${eY-24} ${eRx+10} ${eY-18}`} stroke={hair} strokeWidth="4" fill="none" strokeLinecap="round"/>
+    </>;
+  } else {
+    brows = <>
+      <path d={`M ${eLx-9} ${eY-12} Q ${eLx} ${eY-16} ${eLx+9} ${eY-13}`} stroke={hair} strokeWidth="4" fill="none" strokeLinecap="round"/>
+      <path d={`M ${eRx-9} ${eY-13} Q ${eRx} ${eY-16} ${eRx+9} ${eY-12}`} stroke={hair} strokeWidth="4" fill="none" strokeLinecap="round"/>
+    </>;
+  }
 
-  const handleEndGame = (side: 'left' | 'right') => {
-    setPhase('ended'); sound.playWin(); setShowConfetti(true);
-    onUpdateScore(side === 'left' ? WIN_THRESHOLD : 0, side === 'right' ? WIN_THRESHOLD : 0);
-    setTimeout(() => { onGameWin(side === 'left' ? { ...teamLeft, score: WIN_THRESHOLD } : { ...teamRight, score: WIN_THRESHOLD }); }, 5000);
-  };
+  // ── Mouth ──
+  let mouth: React.ReactNode;
+  if (state === 'won') {
+    mouth = <>
+      <path d={`M ${hx-14} ${hy+20} Q ${hx} ${hy+33} ${hx+14} ${hy+20}`} stroke={hair} strokeWidth="2.5" fill="white" strokeLinecap="round"/>
+      <path d={`M ${hx-8} ${hy+20} Q ${hx} ${hy+28} ${hx+8} ${hy+20}`} fill="#FF7070" opacity="0.4"/>
+    </>;
+  } else if (state === 'lost') {
+    mouth = <path d={`M ${hx-12} ${hy+26} Q ${hx} ${hy+18} ${hx+12} ${hy+26}`} stroke={hair} strokeWidth="2.5" fill="none" strokeLinecap="round"/>;
+  } else if (state === 'pulling') {
+    mouth = <>
+      <rect x={hx-12} y={hy+16} width="24" height="11" rx="3" fill={hair}/>
+      {([-8,-3,2,7] as const).map(ox => <line key={ox} x1={hx+ox} y1={hy+16} x2={hx+ox} y2={hy+27} stroke="white" strokeWidth="1.8"/>)}
+    </>;
+  } else if (state === 'slipping') {
+    mouth = <>
+      <ellipse cx={hx} cy={hy+22} rx="11" ry="12" fill={hair}/>
+      <ellipse cx={hx} cy={hy+20} rx="7" ry="7" fill="#8B0000" opacity="0.7"/>
+    </>;
+  } else {
+    mouth = <path d={`M ${hx-8} ${hy+20} Q ${hx} ${hy+25} ${hx+8} ${hy+20}`} stroke={hair} strokeWidth="2.5" fill="none" strokeLinecap="round"/>;
+  }
 
-  const winnerSide = phase === 'ended' ? (ropePosition <= -WIN_THRESHOLD ? 'left' : 'right') : null;
-  const getPercent = () => ((ropePosition + WIN_THRESHOLD) / (WIN_THRESHOLD * 2)) * 100;
+  // ── Extras ──
+  let extras: React.ReactNode = null;
+  if (state === 'won') {
+    extras = <>
+      <ellipse cx={hx-21} cy={hy+14} rx="9" ry="5" fill="#FF6B8A" opacity="0.55"/>
+      <ellipse cx={hx+21} cy={hy+14} rx="9" ry="5" fill="#FF6B8A" opacity="0.55"/>
+    </>;
+  } else if (state === 'pulling') {
+    extras = <>
+      <ellipse cx={hx+rs*36} cy={hy-10} rx="4" ry="6.5" fill="#7DD3FC" opacity="0.85"/>
+      <ellipse cx={hx+rs*26} cy={hy}    rx="3" ry="5"   fill="#7DD3FC" opacity="0.65"/>
+      <line x1={hx-rs*38} y1={hy-28} x2={hx-rs*48} y2={hy-35} stroke="#F59E0B" strokeWidth="3" strokeLinecap="round"/>
+      <line x1={hx-rs*36} y1={hy-14} x2={hx-rs*48} y2={hy-14} stroke="#F59E0B" strokeWidth="3" strokeLinecap="round"/>
+    </>;
+  } else if (state === 'slipping') {
+    extras = <>
+      <ellipse cx={hx+rs*42} cy={hy-8}  rx="4.5" ry="7"   fill="#7DD3FC" opacity="0.9"/>
+      <ellipse cx={hx+rs*30} cy={hy-18} rx="3.5" ry="5.5" fill="#7DD3FC" opacity="0.7"/>
+    </>;
+  } else {
+    extras = <>
+      <ellipse cx={hx-20} cy={hy+14} rx="8" ry="4.5" fill="#FFAAAA" opacity="0.38"/>
+      <ellipse cx={hx+20} cy={hy+14} rx="8" ry="4.5" fill="#FFAAAA" opacity="0.38"/>
+    </>;
+  }
 
-  // ─── BEAUTIFUL CHARACTER RENDERER ───
-  const renderCharacter = (team: 'left' | 'right', baseX: number, charState: CharState) => {
-    const isLeft = team === 'left';
-    const shirtColor  = isLeft ? '#1d4ed8' : '#b91c1c';
-    const shirtLight  = isLeft ? '#60a5fa' : '#f87171';
-    const shirtDark   = isLeft ? '#1e40af' : '#991b1b';
-    const pantsColor  = isLeft ? '#1e3a5f' : '#450a0a';
-    const shoeColor   = '#0f172a';
-    const skinColor   = '#fcd9a0';
-    const skinDark    = '#f59e0b';
-    const hairColor   = '#1c0a00';
-    const cheekColor  = isLeft ? '#bfdbfe' : '#fecaca';
-
-    // Pose parameters
-    let lean = isLeft ? -6 : 6;
-    let offY = 0;
-    if (charState === 'pulling')  { lean = isLeft ? -22 : 22; offY = 6; }
-    if (charState === 'slipping') { lean = isLeft ? 26 : -26; offY = -4; }
-    if (charState === 'won')      { lean = 0; offY = -14; }
-    if (charState === 'lost')     { lean = isLeft ? 14 : -14; offY = 10; }
-
-    const GY   = 288;            // ground y
-    const hx   = baseX + lean * 0.65;
-    const headY = GY - 155 + offY;
-    const shouldY = headY + 36;
-    const waistY  = shouldY + 52;
-    const footY   = GY - 2;
-
-    const f1x = baseX + (isLeft ? -20 : 20) + (charState === 'slipping' ? (isLeft ? 22 : -22) : 0);
-    const f2x = baseX + (isLeft ?   8 : -8) + (charState === 'slipping' ? (isLeft ? 16 : -16) : 0);
-
-    // Arm toward rope
-    const ropeSide = isLeft ? 1 : -1;
-    const pullExtra = charState === 'pulling' ? ropeSide * 14 : 0;
-    const armEndX   = baseX + ropeSide * 58 + pullExtra;
-    const armEndY   = shouldY + 22;
-
-    // ---- FACE EXPRESSIONS ----
-    const el = hx - 8, er = hx + 8, eyY = headY + 4;
-
-    let eyeL: React.ReactNode, eyeR: React.ReactNode, mouthEl: React.ReactNode;
-    let browL: React.ReactNode, browR: React.ReactNode;
-    let extras: React.ReactNode = null;
-
-    if (charState === 'won') {
-      // BIG SMILE, happy closed eyes ^.^
-      eyeL = <path d={`M ${el-6} ${eyY+1} Q ${el} ${eyY-7} ${el+6} ${eyY+1}`} stroke="#0f172a" strokeWidth="2.8" fill="none" strokeLinecap="round" />;
-      eyeR = <path d={`M ${er-6} ${eyY+1} Q ${er} ${eyY-7} ${er+6} ${eyY+1}`} stroke="#0f172a" strokeWidth="2.8" fill="none" strokeLinecap="round" />;
-      mouthEl = <path d={`M ${hx-12} ${headY+14} Q ${hx} ${headY+25} ${hx+12} ${headY+14}`} stroke="#0f172a" strokeWidth="2.5" fill="#ff9999" strokeLinecap="round" />;
-      browL = <path d={`M ${el-7} ${eyY-12} Q ${el} ${eyY-17} ${el+7} ${eyY-12}`} stroke="#0f172a" strokeWidth="2.2" fill="none" />;
-      browR = <path d={`M ${er-7} ${eyY-12} Q ${er} ${eyY-17} ${er+7} ${eyY-12}`} stroke="#0f172a" strokeWidth="2.2" fill="none" />;
-      extras = <>
-        <ellipse cx={hx-16} cy={headY+10} rx="6" ry="4" fill={cheekColor} opacity="0.7" />
-        <ellipse cx={hx+16} cy={headY+10} rx="6" ry="4" fill={cheekColor} opacity="0.7" />
-        <text x={hx-30} y={headY-28} fontSize="18">⭐</text>
-        <text x={hx+12} y={headY-32} fontSize="16">🎉</text>
-        <text x={hx-9} y={headY-40} fontSize="22">🏆</text>
-      </>;
-    } else if (charState === 'lost') {
-      // SAD FACE with tears :(
-      eyeL = <ellipse cx={el} cy={eyY+2} rx="5" ry="5.5" fill="#334155" />;
-      eyeR = <ellipse cx={er} cy={eyY+2} rx="5" ry="5.5" fill="#334155" />;
-      mouthEl = <path d={`M ${hx-10} ${headY+18} Q ${hx} ${headY+12} ${hx+10} ${headY+18}`} stroke="#0f172a" strokeWidth="2.5" fill="none" strokeLinecap="round" />;
-      browL = <path d={`M ${el-6} ${eyY-9} Q ${el} ${eyY-5} ${el+6} ${eyY-9}`} stroke="#0f172a" strokeWidth="2.2" fill="none" />;
-      browR = <path d={`M ${er-6} ${eyY-9} Q ${er} ${eyY-5} ${er+6} ${eyY-9}`} stroke="#0f172a" strokeWidth="2.2" fill="none" />;
-      extras = <>
-        {/* Tears */}
-        <ellipse cx={el+2} cy={eyY+12} rx="2.5" ry="4" fill="#93c5fd" opacity="0.85" />
-        <ellipse cx={el+3} cy={eyY+18} rx="2" ry="3" fill="#93c5fd" opacity="0.6" />
-        <ellipse cx={er-2} cy={eyY+11} rx="2.5" ry="4" fill="#93c5fd" opacity="0.85" />
-        <text x={hx-10} y={headY-24} fontSize="20">😢</text>
-      </>;
-    } else if (charState === 'pulling') {
-      // GRITTED TEETH, squinting
-      eyeL = <path d={`M ${el-6} ${eyY+3} L ${el+6} ${eyY+3}`} stroke="#0f172a" strokeWidth="3.5" strokeLinecap="round" />;
-      eyeR = <path d={`M ${er-6} ${eyY+3} L ${er+6} ${eyY+3}`} stroke="#0f172a" strokeWidth="3.5" strokeLinecap="round" />;
-      mouthEl = <>
-        <path d={`M ${hx-9} ${headY+14} L ${hx+9} ${headY+14}`} stroke="#0f172a" strokeWidth="2" strokeLinecap="round" />
-        {[-7,-3,1,5].map((ox,i)=>(
-          <line key={i} x1={hx+ox} y1={headY+12} x2={hx+ox} y2={headY+16} stroke="#fff" strokeWidth="1.5"/>
-        ))}
-      </>;
-      browL = <path d={`M ${el-6} ${eyY-10} L ${el+6} ${eyY-7}`} stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round" />;
-      browR = <path d={`M ${er-6} ${eyY-7} L ${er+6} ${eyY-10}`} stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round" />;
-      extras = <>
-        {/* Effort lines */}
-        <line x1={hx + (isLeft?-28:28)} y1={headY-20} x2={hx + (isLeft?-38:38)} y2={headY-28} stroke="#fbbf24" strokeWidth="2" strokeLinecap="round"/>
-        <line x1={hx + (isLeft?-26:26)} y1={headY-8}  x2={hx + (isLeft?-38:38)} y2={headY-10} stroke="#fbbf24" strokeWidth="2" strokeLinecap="round"/>
-        {/* Sweat drops */}
-        <ellipse cx={hx+(isLeft?24:-24)} cy={headY-5} rx="2.5" ry="4" fill="#7dd3fc" opacity="0.8" />
-      </>;
-    } else if (charState === 'slipping') {
-      // SHOCKED O.O
-      eyeL = <><circle cx={el} cy={eyY} r="7" fill="white" stroke="#0f172a" strokeWidth="1.5"/><circle cx={el+1.5} cy={eyY} r="3.5" fill="#0f172a"/></>;
-      eyeR = <><circle cx={er} cy={eyY} r="7" fill="white" stroke="#0f172a" strokeWidth="1.5"/><circle cx={er-1.5} cy={eyY} r="3.5" fill="#0f172a"/></>;
-      mouthEl = <ellipse cx={hx} cy={headY+16} rx="7" ry="8" fill="#0f172a" />;
-      browL = <path d={`M ${el-6} ${eyY-13} Q ${el} ${eyY-18} ${el+6} ${eyY-13}`} stroke="#0f172a" strokeWidth="2.5" fill="none" />;
-      browR = <path d={`M ${er-6} ${eyY-13} Q ${er} ${eyY-18} ${er+6} ${eyY-13}`} stroke="#0f172a" strokeWidth="2.5" fill="none" />;
-      extras = <>
-        <text x={hx-8} y={headY-28} fontSize="18">😱</text>
-        <ellipse cx={hx+(isLeft?30:-30)} cy={headY} rx="3" ry="5" fill="#7dd3fc" opacity="0.7" />
-        <ellipse cx={hx+(isLeft?22:-22)} cy={headY-10} rx="2" ry="4" fill="#7dd3fc" opacity="0.6" />
-      </>;
-    } else {
-      // IDLE – determined ready face
-      eyeL = <><ellipse cx={el} cy={eyY+1} rx="5" ry="6" fill="white" stroke="#0f172a" strokeWidth="1"/><circle cx={el+(isLeft?.5:-.5)} cy={eyY+1} r="3" fill="#0f172a"/><circle cx={el+(isLeft?.5:-.5)+1} cy={eyY-1} r="1" fill="white"/></>;
-      eyeR = <><ellipse cx={er} cy={eyY+1} rx="5" ry="6" fill="white" stroke="#0f172a" strokeWidth="1"/><circle cx={er+(isLeft?.5:-.5)} cy={eyY+1} r="3" fill="#0f172a"/><circle cx={er+(isLeft?.5:-.5)+1} cy={eyY-1} r="1" fill="white"/></>;
-      mouthEl = <path d={`M ${hx-7} ${headY+14} Q ${hx} ${headY+19} ${hx+7} ${headY+14}`} stroke="#0f172a" strokeWidth="2.2" fill="none" strokeLinecap="round" />;
-      browL = <path d={`M ${el-6} ${eyY-10} L ${el+6} ${eyY-8}`} stroke="#0f172a" strokeWidth="2.2" strokeLinecap="round" />;
-      browR = <path d={`M ${er-6} ${eyY-8} L ${er+6} ${eyY-10}`} stroke="#0f172a" strokeWidth="2.2" strokeLinecap="round" />;
-      extras = <>
-        <ellipse cx={hx-16} cy={headY+11} rx="5" ry="3.5" fill={cheekColor} opacity="0.55" />
-        <ellipse cx={hx+16} cy={headY+11} rx="5" ry="3.5" fill={cheekColor} opacity="0.55" />
-      </>;
-    }
-
-    return (
-      <g key={`${team}-${baseX}`}>
-        {/* Shadow */}
-        <ellipse cx={baseX} cy={GY+7} rx="24" ry="6" fill="rgba(0,0,0,0.22)" />
-
-        {/* LEGS */}
-        {charState === 'won' ? (
-          <>
-            <line x1={baseX-6} y1={waistY} x2={baseX-28} y2={GY-16} stroke={pantsColor} strokeWidth="14" strokeLinecap="round"/>
-            <line x1={baseX+6} y1={waistY} x2={baseX+28} y2={GY-10} stroke={pantsColor} strokeWidth="14" strokeLinecap="round"/>
-            <ellipse cx={baseX-26} cy={GY-12} rx="12" ry="6" fill={shoeColor} />
-            <ellipse cx={baseX+26} cy={GY-6}  rx="12" ry="6" fill={shoeColor} />
-          </>
-        ) : (
-          <>
-            <line x1={baseX-5} y1={waistY} x2={f1x} y2={footY} stroke={pantsColor} strokeWidth="14" strokeLinecap="round"/>
-            <line x1={baseX+5} y1={waistY} x2={f2x} y2={footY} stroke={pantsColor} strokeWidth="14" strokeLinecap="round"/>
-            {/* Shoe highlight */}
-            <ellipse cx={f1x} cy={footY+5} rx="14" ry="6" fill={shoeColor} />
-            <ellipse cx={f2x} cy={footY+5} rx="14" ry="6" fill={shoeColor} />
-            <ellipse cx={f1x+(isLeft?2:-2)} cy={footY+2} rx="6" ry="2.5" fill="#334155" />
-            <ellipse cx={f2x+(isLeft?2:-2)} cy={footY+2} rx="6" ry="2.5" fill="#334155" />
-          </>
-        )}
-
-        {/* BODY / SHIRT */}
-        <path d={`M ${hx-20} ${shouldY} L ${hx+20} ${shouldY} L ${baseX+15} ${waistY} L ${baseX-15} ${waistY} Z`}
-          fill={shirtColor} stroke={shirtDark} strokeWidth="1.2" />
-        {/* Collar */}
-        <path d={`M ${hx-9} ${shouldY} L ${hx} ${shouldY+13} L ${hx+9} ${shouldY}`} fill={shirtLight} opacity="0.5" />
-        {/* Shirt shine */}
-        <path d={`M ${hx-16} ${shouldY+4} L ${hx-14} ${shouldY+30} L ${hx-8} ${shouldY+30} L ${hx-10} ${shouldY+4} Z`}
-          fill="white" opacity="0.08" />
-        {/* Number on shirt */}
-        <text x={hx} y={shouldY+34} fontSize="13" fill="white" textAnchor="middle" fontWeight="bold" opacity="0.85">
-          {isLeft ? teamLeft.emoji : teamRight.emoji}
-        </text>
-
-        {/* BELT */}
-        <rect x={baseX-16} y={waistY-7} width="32" height="9" rx="3" fill="#92400e" stroke="#78350f" strokeWidth="1"/>
-        <rect x={baseX-5} y={waistY-7} width="10" height="9" rx="2" fill="#ca8a04"/>
-        <rect x={baseX-2} y={waistY-5} width="4" height="5" rx="1" fill="#fbbf24"/>
-
-        {/* PULLING ARM (toward rope) */}
-        {charState === 'won' ? (
-          <>
-            <line x1={hx-16} y1={shouldY+8} x2={hx-36} y2={shouldY-22} stroke={shirtColor} strokeWidth="12" strokeLinecap="round"/>
-            <circle cx={hx-36} cy={shouldY-22} r="8" fill={skinColor} stroke={skinDark} strokeWidth="1.2"/>
-            <line x1={hx+16} y1={shouldY+8} x2={hx+36} y2={shouldY-22} stroke={shirtColor} strokeWidth="12" strokeLinecap="round"/>
-            <circle cx={hx+36} cy={shouldY-22} r="8" fill={skinColor} stroke={skinDark} strokeWidth="1.2"/>
-          </>
-        ) : (
-          <>
-            <line x1={hx+ropeSide*16} y1={shouldY+8} x2={armEndX} y2={armEndY} stroke={shirtColor} strokeWidth="12" strokeLinecap="round"/>
-            <circle cx={armEndX} cy={armEndY} r="8" fill={skinColor} stroke={skinDark} strokeWidth="1.2"/>
-            {/* Fingers on rope */}
-            {[0,1,2].map(fi => (
-              <ellipse key={fi} cx={armEndX + ropeSide*(fi*3-3)} cy={armEndY+8+fi} rx="3" ry="2" fill={skinDark} />
-            ))}
-            {/* Balance arm */}
-            <line x1={hx-ropeSide*12} y1={shouldY+10} x2={hx-ropeSide*35} y2={shouldY+32} stroke={shirtColor} strokeWidth="10" strokeLinecap="round"/>
-            <circle cx={hx-ropeSide*35} cy={shouldY+32} r="7" fill={skinColor} stroke={skinDark} strokeWidth="1.2"/>
-          </>
-        )}
-
-        {/* NECK */}
-        <rect x={hx-7} y={headY+18} width="14" height="16" rx="5" fill={skinColor} stroke={skinDark} strokeWidth="0.8"/>
-
-        {/* HEAD */}
-        <ellipse cx={hx} cy={headY} rx="26" ry="28" fill={skinColor} stroke={skinDark} strokeWidth="1.2"/>
-
-        {/* EARS */}
-        <ellipse cx={hx-25} cy={headY+4} rx="6" ry="8" fill={skinColor} stroke={skinDark} strokeWidth="0.8"/>
-        <ellipse cx={hx-25} cy={headY+4} rx="3" ry="5" fill={skinDark} opacity="0.3"/>
-        <ellipse cx={hx+25} cy={headY+4} rx="6" ry="8" fill={skinColor} stroke={skinDark} strokeWidth="0.8"/>
-        <ellipse cx={hx+25} cy={headY+4} rx="3" ry="5" fill={skinDark} opacity="0.3"/>
-
-        {/* HAIR */}
-        <path d={`M ${hx-24} ${headY-10} C ${hx-26} ${headY-38} ${hx+26} ${headY-38} ${hx+24} ${headY-10}`}
-          fill={hairColor} />
-        {/* Hair highlight */}
-        <path d={`M ${hx-12} ${headY-30} C ${hx-8} ${headY-36} ${hx} ${headY-36} ${hx+4} ${headY-30}`}
-          stroke="white" strokeWidth="1.5" fill="none" opacity="0.2" />
-
-        {/* NOSE */}
-        <ellipse cx={hx} cy={headY+7} rx="3" ry="2.5" fill={skinDark} opacity="0.4" />
-
-        {/* FACE EXPRESSIONS */}
-        {browL}{browR}
-        {eyeL}{eyeR}
-        {mouthEl}
-        {extras}
-      </g>
-    );
-  };
-
-  // Determine character states
-  const getCharState = (team: 'left' | 'right'): CharState => {
-    if (phase === 'ended') return winnerSide === team ? 'won' : 'lost';
-    if (team === 'left') { if (isLeftPulling) return 'pulling'; if (isLeftSlipping) return 'slipping'; }
-    else { if (isRightPulling) return 'pulling'; if (isRightSlipping) return 'slipping'; }
-    return 'idle';
-  };
-
-  const leftState  = getCharState('left');
-  const rightState = getCharState('right');
+  const AW = 16, FW = 13;
 
   return (
-    <div className={`w-full max-w-6xl mx-auto px-2 py-2 select-none transition-all duration-75 ${arenaShake ? 'translate-x-0.5' : ''}`}>
+    <g>
+      {/* Shadow */}
+      <ellipse cx={baseX} cy={GY+8} rx="30" ry="7" fill="rgba(0,0,0,0.22)"/>
 
-      {/* Hidden music iframe – src NEVER changes */}
-      {isMusicPlaying && (
-        <iframe ref={musicRef} data-tugofwar="1"
-          src="https://www.youtube.com/embed/zK3PEHr40jw?autoplay=1&loop=1&playlist=zK3PEHr40jw&controls=0&mute=1&enablejsapi=1&origin=http://localhost"
-          allow="autoplay"
-          className="w-0 h-0 absolute left-0 top-0 pointer-events-none opacity-0"
-          title="TugOfWar Music"
-        />
+      {/* Legs */}
+      {state === 'won' ? (
+        <>
+          <line x1={baseX-5} y1={hipY} x2={fLx-18} y2={GY-18} stroke={pants} strokeWidth="18" strokeLinecap="round"/>
+          <line x1={baseX+5} y1={hipY} x2={fRx+18} y2={GY-12} stroke={pants} strokeWidth="18" strokeLinecap="round"/>
+          <ellipse cx={fLx-18} cy={GY-12} rx="18" ry="7" fill={shoe}/>
+          <ellipse cx={fLx-10} cy={GY-15} rx="9"  ry="4" fill={shoeH}/>
+          <ellipse cx={fRx+18} cy={GY-6}  rx="18" ry="7" fill={shoe}/>
+          <ellipse cx={fRx+26} cy={GY-9}  rx="9"  ry="4" fill={shoeH}/>
+        </>
+      ) : (
+        <>
+          <line x1={baseX-5} y1={hipY} x2={fLx-2} y2={knY} stroke={pants}  strokeWidth="18" strokeLinecap="round"/>
+          <line x1={baseX+5} y1={hipY} x2={fRx+2} y2={knY} stroke={pants}  strokeWidth="18" strokeLinecap="round"/>
+          <line x1={fLx-2}   y1={knY}  x2={fLx}   y2={GY}  stroke={pantsD} strokeWidth="15" strokeLinecap="round"/>
+          <line x1={fRx+2}   y1={knY}  x2={fRx}   y2={GY}  stroke={pantsD} strokeWidth="15" strokeLinecap="round"/>
+          <ellipse cx={fLx} cy={GY+5} rx="18" ry="7" fill={shoe}/>
+          <ellipse cx={fLx+(L?4:-4)} cy={GY+2} rx="9" ry="4" fill={shoeH}/>
+          <ellipse cx={fRx} cy={GY+5} rx="18" ry="7" fill={shoe}/>
+          <ellipse cx={fRx+(L?4:-4)} cy={GY+2} rx="9" ry="4" fill={shoeH}/>
+        </>
       )}
 
-      {/* ─── DIFFICULTY SELECT ─── */}
+      {/* Back arm */}
+      {state !== 'won' && <>
+        <line x1={hx-rs*22} y1={shY+10} x2={beX} y2={beY} stroke={shirtD} strokeWidth={AW} strokeLinecap="round"/>
+        <line x1={beX} y1={beY} x2={bhX} y2={bhY} stroke={shirtD} strokeWidth={FW} strokeLinecap="round"/>
+        <circle cx={bhX} cy={bhY} r="10" fill={skin} stroke={skinD} strokeWidth="1"/>
+      </>}
+
+      {/* Shirt body */}
+      <path d={`M ${hx-26} ${shY} C ${hx-30} ${shY+12} ${baseX-22} ${waY-8} ${baseX-18} ${waY}
+               L ${baseX+18} ${waY} C ${baseX+22} ${waY-8} ${hx+30} ${shY+12} ${hx+26} ${shY}
+               C ${hx+18} ${shY-6} ${hx-18} ${shY-6} ${hx-26} ${shY} Z`} fill={shirt}/>
+      <path d={`M ${hx-22} ${shY+5} C ${hx-26} ${shY+20} ${hx-20} ${shY+44} ${hx-12} ${shY+50}`}
+        stroke={shirtH} strokeWidth="5" fill="none" opacity="0.35" strokeLinecap="round"/>
+      <path d={`M ${hx-11} ${shY} L ${hx} ${shY+15} L ${hx+11} ${shY}`} fill={shirtD} opacity="0.65"/>
+
+      {/* Hip */}
+      <rect x={baseX-18} y={waY} width="36" height="20" rx="5" fill={pants}/>
+
+      {/* Belt */}
+      <rect x={baseX-20} y={waY-6} width="40" height="10" rx="3" fill="#78350F" stroke="#451A03" strokeWidth="1"/>
+      <rect x={baseX-5}  y={waY-6} width="10" height="10" rx="2" fill="#CA8A04"/>
+      <rect x={baseX-3}  y={waY-4} width="6"  height="6"  rx="1" fill="#FBBF24"/>
+
+      {/* Neck */}
+      <rect x={hx-9} y={hy+28} width="18" height="18" rx="7" fill={skin} stroke={skinD} strokeWidth="0.8"/>
+
+      {/* Ears */}
+      <ellipse cx={hx-28} cy={hy+4} rx="6" ry="9" fill={skin} stroke={skinD} strokeWidth="1"/>
+      <ellipse cx={hx-28} cy={hy+4} rx="3.5" ry="5.5" fill={skinD} opacity="0.28"/>
+      <ellipse cx={hx+28} cy={hy+4} rx="6" ry="9" fill={skin} stroke={skinD} strokeWidth="1"/>
+      <ellipse cx={hx+28} cy={hy+4} rx="3.5" ry="5.5" fill={skinD} opacity="0.28"/>
+
+      {/* Head */}
+      <ellipse cx={hx} cy={hy} rx="29" ry="33" fill={skin} stroke={skinD} strokeWidth="1.2"/>
+      <ellipse cx={hx-16} cy={hy+10} rx="10" ry="7" fill={skinD} opacity="0.1"/>
+      <ellipse cx={hx+16} cy={hy+10} rx="10" ry="7" fill={skinD} opacity="0.1"/>
+
+      {/* Hair */}
+      <path d={`M ${hx-27} ${hy-13} C ${hx-30} ${hy-48} ${hx+30} ${hy-48} ${hx+27} ${hy-13}`} fill={hair}/>
+      <path d={`M ${hx-27} ${hy-13} C ${hx-36} ${hy-3} ${hx-35} ${hy+16} ${hx-30} ${hy+20}`} fill={hair}/>
+      <path d={`M ${hx+27} ${hy-13} C ${hx+36} ${hy-3} ${hx+35} ${hy+16} ${hx+30} ${hy+20}`} fill={hair}/>
+      <path d={`M ${hx-14} ${hy-38} C ${hx-7} ${hy-44} ${hx+7} ${hy-44} ${hx+14} ${hy-38}`}
+        stroke="white" strokeWidth="2.5" fill="none" opacity="0.18" strokeLinecap="round"/>
+
+      {/* Face features */}
+      {brows}
+      {eyes}
+      <ellipse cx={hx-3.5} cy={hy+12} rx="2.8" ry="2.2" fill={skinD} opacity="0.3"/>
+      <ellipse cx={hx+3.5} cy={hy+12} rx="2.8" ry="2.2" fill={skinD} opacity="0.3"/>
+      {mouth}
+      {extras}
+
+      {/* Front arm */}
+      {state === 'won' ? (
+        <>
+          <line x1={hx-22} y1={shY+10} x2={beX} y2={beY} stroke={shirt} strokeWidth={AW} strokeLinecap="round"/>
+          <line x1={beX} y1={beY} x2={bhX} y2={bhY} stroke={shirt} strokeWidth={FW} strokeLinecap="round"/>
+          <circle cx={bhX} cy={bhY} r="10" fill={skin} stroke={skinD} strokeWidth="1"/>
+          <line x1={hx+22} y1={shY+10} x2={peX} y2={peY} stroke={shirt} strokeWidth={AW} strokeLinecap="round"/>
+          <line x1={peX} y1={peY} x2={phX} y2={phY} stroke={shirt} strokeWidth={FW} strokeLinecap="round"/>
+          <circle cx={phX} cy={phY} r="10" fill={skin} stroke={skinD} strokeWidth="1"/>
+        </>
+      ) : (
+        <>
+          <line x1={hx+rs*22} y1={shY+10} x2={peX} y2={peY} stroke={shirt} strokeWidth={AW} strokeLinecap="round"/>
+          <line x1={peX} y1={peY} x2={phX} y2={phY} stroke={shirt} strokeWidth={FW} strokeLinecap="round"/>
+          <circle cx={phX} cy={phY} r="10" fill={skin} stroke={skinD} strokeWidth="1"/>
+          {(state === 'idle' || state === 'pulling') && ([-3,0,3] as const).map(fi => (
+            <ellipse key={fi} cx={phX+rs*fi} cy={phY+10} rx="4.5" ry="3" fill={skinD}/>
+          ))}
+        </>
+      )}
+
+      {/* Win trophy */}
+      {state === 'won' && (
+        <text x={hx-14} y={hy-50} fontSize="28">🏆</text>
+      )}
+    </g>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// ROPE — layered paths, NO ellipse knots
+// ─────────────────────────────────────────────────────────────
+function TugRope({ ropePosition, lPull, rPull }: { ropePosition: number; lPull: boolean; rPull: boolean }) {
+  const sh   = -ropePosition * 12;
+  const lx   = 295 + sh, rx = 705 + sh, mx = (lx + rx) / 2;
+  const ry   = 282;
+  const sag  = lPull || rPull ? 4 : 11;
+  const my   = ry + sag;
+  const p    = `M ${lx},${ry} Q ${mx},${my} ${rx},${ry}`;
+  const ph   = `M ${lx},${ry-6} Q ${mx},${my-6} ${rx},${ry-6}`;
+  const psh  = `M ${lx},${ry-8} Q ${mx},${my-8} ${rx},${ry-8}`;
+  return (
+    <g>
+      <path d={p}  stroke="rgba(0,0,0,0.4)"  strokeWidth="30" fill="none" strokeLinecap="round"/>
+      <path d={p}  stroke="#3B1A06"           strokeWidth="26" fill="none" strokeLinecap="round"/>
+      <path d={p}  stroke="#7C3D12"           strokeWidth="20" fill="none" strokeLinecap="round"/>
+      <path d={p}  stroke="#A5601E"           strokeWidth="14" fill="none" strokeLinecap="round"/>
+      {/* Braid dash A */}
+      <path d={p}  stroke="#4A2008" strokeWidth="18" fill="none" strokeDasharray="22,22" strokeDashoffset="0"  strokeLinecap="butt" opacity="0.55"/>
+      {/* Braid dash B (offset = half period, opposite colour) */}
+      <path d={p}  stroke="#D4913C" strokeWidth="18" fill="none" strokeDasharray="22,22" strokeDashoffset="22" strokeLinecap="butt" opacity="0.28"/>
+      {/* Highlight ridge */}
+      <path d={ph} stroke="#E8A84C" strokeWidth="5"  fill="none" opacity="0.55" strokeLinecap="round"/>
+      <path d={psh} stroke="white"   strokeWidth="2"  fill="none" opacity="0.18" strokeLinecap="round"/>
+    </g>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// MAIN COMPONENT
+// ─────────────────────────────────────────────────────────────
+export default function TugOfWar({ teamLeft, teamRight, wordList, selectedDifficulty, onGameWin, onUpdateScore }: TugOfWarProps) {
+  const [phase,        setPhase]        = useState<'difficulty'|'battle'|'ended'>('difficulty');
+  const [difficulty,   setDifficulty]   = useState<Difficulty>('medium');
+  const [musicOn,      setMusicOn]      = useState(true);
+  const [ropePos,      setRopePos]      = useState(0);
+  const WIN = 12;
+
+  const [words,      setWords]      = useState<WordPair[]>(MEDIUM_WORDS);
+  const [lWord,      setLWord]      = useState(MEDIUM_WORDS[0]);
+  const [lOpts,      setLOpts]      = useState<string[]>([]);
+  const [lFrozen,    setLFrozen]    = useState(false);
+  const [lPool,      setLPool]      = useState<WordPair[]>([]);
+  const [rWord,      setRWord]      = useState(MEDIUM_WORDS[1]);
+  const [rOpts,      setROpts]      = useState<string[]>([]);
+  const [rFrozen,    setRFrozen]    = useState(false);
+  const [rPool,      setRPool]      = useState<WordPair[]>([]);
+  const [lStreak,    setLStreak]    = useState(0);
+  const [rStreak,    setRStreak]    = useState(0);
+  const [lPull,      setLPull]      = useState(false);
+  const [rPull,      setRPull]      = useState(false);
+  const [lSlip,      setLSlip]      = useState(false);
+  const [rSlip,      setRSlip]      = useState(false);
+  const [shake,      setShake]      = useState(false);
+  const [confetti,   setConfetti]   = useState(false);
+  const [lFx, setLFx] = useState<{id:number;text:string}[]>([]);
+  const [rFx, setRFx] = useState<{id:number;text:string}[]>([]);
+
+  const musicRef = useRef<HTMLIFrameElement>(null);
+
+  const yt = useCallback((fn: string, args: unknown[] = []) => {
+    musicRef.current?.contentWindow?.postMessage(JSON.stringify({ event:'command', func:fn, args }), '*');
+  }, []);
+
+  // YouTube ready listener
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      try {
+        const d = JSON.parse(typeof e.data === 'string' ? e.data : '{}');
+        if (d.event === 'onReady' && phase === 'battle' && musicOn) {
+          yt('unMute'); yt('setVolume', [88]);
+        }
+      } catch {}
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [phase, musicOn, yt]);
+
+  // Start/stop music with phase
+  useEffect(() => {
+    if (phase === 'battle' && musicOn) {
+      yt('unMute'); yt('setVolume', [88]); yt('playVideo');
+      const t1 = setTimeout(() => { yt('unMute'); yt('setVolume', [88]); }, 500);
+      const t2 = setTimeout(() => { yt('unMute'); yt('setVolume', [88]); }, 1200);
+      return () => { clearTimeout(t1); clearTimeout(t2); };
+    }
+    yt('mute');
+  }, [phase, musicOn, yt]);
+
+  // Auto-start from parent
+  useEffect(() => {
+    if (selectedDifficulty && selectedDifficulty !== 'custom') {
+      const d: Difficulty = selectedDifficulty === 'beginner' ? 'easy' : selectedDifficulty === 'advanced' ? 'hard' : 'medium';
+      startBattle(d);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDifficulty]);
+
+  const startBattle = (d: Difficulty) => {
+    sound.playCorrect(); setDifficulty(d);
+    const ws = d === 'easy' ? EASY_WORDS : d === 'hard' ? HARD_WORDS
+             : d === 'custom' && wordList?.length ? wordList : MEDIUM_WORDS;
+    setWords(ws); setPhase('battle');
+    genQ('left',  ws, [...ws].sort(() => Math.random()-.5));
+    genQ('right', ws, [...ws].sort(() => Math.random()-.5));
+  };
+
+  const genQ = (side: 'left'|'right', pool: WordPair[], cur: WordPair[]) => {
+    let arr = [...cur];
+    if (!arr.length) arr = [...pool].sort(() => Math.random()-.5);
+    const item = arr.pop()!;
+    const dist = pool.filter(w => w.en !== item.en).map(w => w.en).sort(() => Math.random()-.5).slice(0,3);
+    const opts = [item.en, ...dist].sort(() => Math.random()-.5);
+    if (side === 'left')  { setLPool(arr); setLWord(item); setLOpts(opts); }
+    else                  { setRPool(arr); setRWord(item); setROpts(opts); }
+  };
+
+  const addFx = (side: 'left'|'right', text: string) => {
+    const e = { id: Date.now(), text };
+    if (side === 'left') { setLFx(p=>[...p,e]); setTimeout(() => setLFx(p=>p.slice(1)), 1600); }
+    else                 { setRFx(p=>[...p,e]); setTimeout(() => setRFx(p=>p.slice(1)), 1600); }
+  };
+
+  const endGame = (side: 'left'|'right') => {
+    setPhase('ended'); sound.playWin(); setConfetti(true);
+    onUpdateScore(side==='left'?WIN:0, side==='right'?WIN:0);
+    setTimeout(() => onGameWin(side==='left' ? {...teamLeft,score:WIN} : {...teamRight,score:WIN}), 5000);
+  };
+
+  const answerLeft = (opt: string) => {
+    if (lFrozen || phase !== 'battle') return;
+    if (opt === lWord.en) {
+      sound.playCorrect();
+      const st = lStreak+1; setLStreak(st);
+      addFx('left', st>=2 ? `🔥 COMBO x${st}` : "💪 TO'G'RI!");
+      setLPull(true); setShake(true);
+      setTimeout(() => setLPull(false), 650);
+      setTimeout(() => setShake(false), 300);
+      const next = Math.max(-WIN, ropePos - (st>=2?1.5:1));
+      setRopePos(next);
+      if (next <= -WIN) endGame('left');
+      else genQ('left', words, lPool);
+    } else {
+      sound.playIncorrect(); setLStreak(0);
+      addFx('left', '😱 XATO!');
+      setLFrozen(true); setLSlip(true);
+      const next = Math.min(WIN, ropePos+3);
+      setRopePos(next);
+      if (next >= WIN) endGame('right');
+      else setTimeout(() => { setLFrozen(false); setLSlip(false); genQ('left',words,lPool); }, 1500);
+    }
+  };
+
+  const answerRight = (opt: string) => {
+    if (rFrozen || phase !== 'battle') return;
+    if (opt === rWord.en) {
+      sound.playCorrect();
+      const st = rStreak+1; setRStreak(st);
+      addFx('right', st>=2 ? `🔥 COMBO x${st}` : "💪 TO'G'RI!");
+      setRPull(true); setShake(true);
+      setTimeout(() => setRPull(false), 650);
+      setTimeout(() => setShake(false), 300);
+      const next = Math.min(WIN, ropePos + (st>=2?1.5:1));
+      setRopePos(next);
+      if (next >= WIN) endGame('right');
+      else genQ('right', words, rPool);
+    } else {
+      sound.playIncorrect(); setRStreak(0);
+      addFx('right', '😱 XATO!');
+      setRFrozen(true); setRSlip(true);
+      const next = Math.max(-WIN, ropePos-3);
+      setRopePos(next);
+      if (next <= -WIN) endGame('left');
+      else setTimeout(() => { setRFrozen(false); setRSlip(false); genQ('right',words,rPool); }, 1500);
+    }
+  };
+
+  const winner = phase === 'ended' ? (ropePos <= -WIN ? 'left' : 'right') : null;
+  const pct    = ((ropePos + WIN) / (WIN * 2)) * 100;
+  const sh     = -ropePos * 12;
+
+  const lState: CharState = phase === 'ended' ? (winner==='left'?'won':'lost')
+    : lPull ? 'pulling' : lSlip ? 'slipping' : 'idle';
+  const rState: CharState = phase === 'ended' ? (winner==='right'?'won':'lost')
+    : rPull ? 'pulling' : rSlip ? 'slipping' : 'idle';
+
+  const flagX = 500 + ropePos * 14;
+
+  return (
+    <div className={`w-full max-w-6xl mx-auto px-2 py-2 select-none transition-transform duration-75 ${shake?'translate-x-0.5':''}`}>
+
+      {/* ── MUSIC (always mounted so it pre-buffers) ── */}
+      <iframe
+        ref={musicRef}
+        src="https://www.youtube.com/embed/g1YohGdFIXM?autoplay=1&loop=1&playlist=g1YohGdFIXM&controls=0&mute=1&enablejsapi=1"
+        allow="autoplay"
+        title="Andijon Polkasi"
+        className="absolute top-0 left-0 w-0 h-0 pointer-events-none opacity-0"
+      />
+
+      {/* ── DIFFICULTY SCREEN ── */}
       {phase === 'difficulty' && (
         <div className="max-w-2xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl mt-4 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-500 via-purple-500 to-rose-500" />
-          <div className="space-y-2 text-center">
-            <span className="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-rose-400 uppercase tracking-widest block">IT SHAHARCHA</span>
-            <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight flex items-center justify-center gap-2">
-              <Swords className="w-6 h-6 text-rose-500" /> ARQON TORTISH JANGI
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-500 via-purple-500 to-rose-500"/>
+          <div className="text-center space-y-1">
+            <span className="text-[10px] font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-rose-400 uppercase tracking-widest block">IT SHAHARCHA</span>
+            <h2 className="text-2xl md:text-3xl font-black text-white uppercase flex items-center justify-center gap-2">
+              <Swords className="w-6 h-6 text-rose-500"/> ARQON TORTISH
             </h2>
-            <p className="text-slate-400 text-xs">To'g'ri javob = arqon tortish! Noto'g'ri = 3 qadam orqaga!</p>
+            <p className="text-slate-400 text-xs">To'g'ri javob = arqon tortish! Xato = 3 qadam orqaga!</p>
           </div>
           <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-900">
             <span className="text-xs text-slate-300 font-bold flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping inline-block" />Fon musiqasi
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block"/>🎵 Andijon Polkasi
             </span>
-            <button onClick={() => { sound.playTap(); setIsMusicPlaying(!isMusicPlaying); }}
-              className={`py-1.5 px-4 rounded-xl border text-[10px] font-black uppercase cursor-pointer transition-all ${isMusicPlaying ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
-              {isMusicPlaying ? <Volume2 className="w-4 h-4 inline" /> : <VolumeX className="w-4 h-4 inline" />}
+            <button onClick={() => { sound.playTap(); setMusicOn(!musicOn); }}
+              className={`py-1.5 px-4 rounded-xl border text-[10px] font-black uppercase cursor-pointer transition-all ${musicOn?'bg-emerald-500/10 text-emerald-400 border-emerald-500/30':'bg-slate-900 text-slate-400 border-slate-700'}`}>
+              {musicOn ? <Volume2 className="w-4 h-4 inline"/> : <VolumeX className="w-4 h-4 inline"/>}
             </button>
           </div>
           <div className="space-y-3">
-            <span className="text-[10px] uppercase font-black text-slate-500 block tracking-wider text-center">DARAJANI TANLANG:</span>
+            <p className="text-[10px] uppercase font-black text-slate-500 text-center tracking-wider">DARAJANI TANLANG:</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {([
-                { diff:'easy',   emoji:'🌱', label:'Headway Beginner', desc:'Oson so\'zlar',       color:'emerald' },
-                { diff:'medium', emoji:'⚡', label:'Headway Upper',    desc:'O\'rta daraja',        color:'cyan'    },
-                { diff:'hard',   emoji:'🏆', label:'IELTS / Advanced', desc:'Qiyin akademik',      color:'rose'    },
-              ] as const).map(({ diff, emoji, label, desc, color }) => (
-                <button key={diff} onClick={() => handleStartBattle(diff)}
-                  className={`p-4 bg-slate-950 hover:bg-${color}-950/20 hover:border-${color}-500 border border-slate-900 rounded-2xl text-center active:scale-95 transition-all cursor-pointer group`}>
-                  <div className="text-2xl">{emoji}</div>
-                  <h4 className={`font-extrabold text-white text-xs uppercase mt-1 group-hover:text-${color}-400`}>{label}</h4>
-                  <p className="text-[9px] text-zinc-500 mt-0.5">{desc}</p>
+              {[
+                { d:'easy',   e:'🌱', l:'Headway Beginner', s:'Oson so\'zlar'  } as const,
+                { d:'medium', e:'⚡', l:'Headway Upper',    s:'O\'rta daraja'   } as const,
+                { d:'hard',   e:'🏆', l:'IELTS Advanced',   s:'Qiyin akademik' } as const,
+              ].map(({ d, e, l, s }) => (
+                <button key={d} onClick={() => startBattle(d)}
+                  className="p-4 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-600 rounded-2xl text-center active:scale-95 transition-all cursor-pointer">
+                  <div className="text-2xl">{e}</div>
+                  <h4 className="font-extrabold text-white text-xs uppercase mt-1">{l}</h4>
+                  <p className="text-[9px] text-zinc-500 mt-0.5">{s}</p>
                 </button>
               ))}
             </div>
             {wordList?.length > 0 && (
-              <button onClick={() => handleStartBattle('custom')}
-                className="w-full p-4 bg-slate-950 hover:bg-indigo-950/20 hover:border-indigo-500 border border-slate-900 rounded-2xl active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2">
+              <button onClick={() => startBattle('custom')}
+                className="w-full p-4 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-600 rounded-2xl active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2">
                 <span className="text-xl">✍️</span>
                 <div>
                   <h4 className="font-extrabold text-white text-xs uppercase">O'QITUVCHINING LUG'ATI</h4>
-                  <p className="text-[9px] text-indigo-400 font-bold mt-0.5 uppercase">{wordList.length} ta so'z</p>
+                  <p className="text-[9px] text-indigo-400 font-bold mt-0.5">{wordList.length} ta so'z</p>
                 </div>
               </button>
             )}
@@ -495,258 +609,168 @@ export default function TugOfWar({ teamLeft, teamRight, wordList, selectedDiffic
         </div>
       )}
 
-      {/* ─── BATTLE ARENA ─── */}
+      {/* ── BATTLE ── */}
       {(phase === 'battle' || phase === 'ended') && (
-        <div className="space-y-3 w-full">
-
-          {/* Score header */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2 px-2">
+        <div className="space-y-3">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2 px-1">
             <div className="flex items-center gap-2">
               <span className="text-xl">{teamLeft.emoji}</span>
-              <span style={{ color: teamLeft.color }} className="font-black uppercase text-sm">{teamLeft.name}</span>
-              {leftSuccessStreak > 1 && <span className="bg-cyan-500 text-slate-950 px-2 py-0.5 text-[9px] font-black rounded animate-bounce">x{leftSuccessStreak} COMBO! 🔥</span>}
-            </div>
-            <div className="flex items-center gap-2 bg-slate-900 py-1.5 px-3 rounded-full border border-slate-800 text-xs font-black text-amber-400">
-              <Zap className="w-3 h-3 text-yellow-400 animate-pulse" />
-              {difficulty === 'easy' ? 'BEGINNER' : difficulty === 'medium' ? 'UPPER' : difficulty === 'hard' ? 'IELTS' : 'MAXSUS'}
-              <button onClick={() => setIsMusicPlaying(!isMusicPlaying)} className="ml-1 text-slate-500 hover:text-white">
-                {isMusicPlaying ? <Volume2 className="w-3.5 h-3.5 text-rose-400" /> : <VolumeX className="w-3.5 h-3.5" />}
-              </button>
+              <span style={{ color:teamLeft.color }} className="font-black uppercase text-sm">{teamLeft.name}</span>
+              {lStreak > 1 && <span className="bg-cyan-500 text-slate-950 px-2 py-0.5 text-[9px] font-black rounded animate-bounce">x{lStreak}🔥</span>}
             </div>
             <div className="flex items-center gap-2">
-              {rightSuccessStreak > 1 && <span className="bg-rose-500 text-slate-950 px-2 py-0.5 text-[9px] font-black rounded animate-bounce">x{rightSuccessStreak} COMBO! 🔥</span>}
-              <span style={{ color: teamRight.color }} className="font-black uppercase text-sm">{teamRight.name}</span>
+              <button onClick={() => setMusicOn(!musicOn)}>
+                {musicOn ? <Volume2 className="w-4 h-4 text-emerald-400"/> : <VolumeX className="w-4 h-4 text-slate-500"/>}
+              </button>
+              <span className="text-[9px] font-black text-amber-400 uppercase flex items-center gap-1">
+                <Zap className="w-3 h-3"/>{difficulty==='easy'?'BEGINNER':difficulty==='hard'?'IELTS':difficulty==='custom'?'MAXSUS':'UPPER'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {rStreak > 1 && <span className="bg-rose-500 text-slate-950 px-2 py-0.5 text-[9px] font-black rounded animate-bounce">x{rStreak}🔥</span>}
+              <span style={{ color:teamRight.color }} className="font-black uppercase text-sm">{teamRight.name}</span>
               <span className="text-xl">{teamRight.emoji}</span>
             </div>
           </div>
 
-          {/* ── ARENA SVG ── */}
-          <div className="relative w-full rounded-3xl overflow-hidden border-2 border-slate-700 shadow-2xl" style={{ background: 'linear-gradient(180deg,#0c1445 0%,#1a2a6c 40%,#4a1a1a 100%)' }}>
-
-            {/* Confetti on win */}
-            {showConfetti && (
+          {/* Arena */}
+          <div className="relative w-full rounded-3xl overflow-hidden border-2 border-slate-700 shadow-2xl">
+            {/* Confetti */}
+            {confetti && (
               <div className="absolute inset-0 z-30 pointer-events-none overflow-hidden">
-                {confettiPieces.map(p => (
+                {confettiItems.map(p => (
                   <motion.div key={p.id}
-                    initial={{ y: -20, x: `${p.x}vw`, opacity: 1, rotate: p.rotation }}
-                    animate={{ y: '110vh', opacity: [1,1,0], rotate: p.rotation + 720 }}
-                    transition={{ duration: 2.5 + Math.random(), delay: p.delay, ease: 'easeIn' }}
-                    style={{ position:'absolute', top:0, width: p.size, height: p.size * 0.5, borderRadius: 2, background: p.color }}
-                  />
+                    initial={{ y:-20, x:`${p.x}vw`, opacity:1, rotate:p.rot }}
+                    animate={{ y:'110vh', opacity:[1,1,0], rotate:p.rot+720 }}
+                    transition={{ duration:2.5+Math.random(), delay:p.delay, ease:'easeIn' }}
+                    style={{ position:'absolute', top:0, width:p.sz, height:p.sz*0.5, borderRadius:2, background:p.col }}/>
                 ))}
               </div>
             )}
-
-            {/* Floating effects */}
+            {/* Float texts */}
             <div className="absolute inset-0 z-20 pointer-events-none">
               <AnimatePresence>
-                {leftFloatEffects.map(e => (
+                {lFx.map(e=>(
                   <motion.div key={e.id}
-                    initial={{ opacity:0, y:180, scale:0.7 }} animate={{ opacity:[0,1,1,0], y:[180,80] }} exit={{ opacity:0 }}
-                    transition={{ duration:1.3 }}
-                    className="absolute left-[14%] text-cyan-300 font-black text-sm bg-slate-950/90 px-3 py-1 rounded-xl border border-cyan-500/30 shadow">
-                    {e.text}
+                    initial={{opacity:0,y:220,scale:0.8}} animate={{opacity:[0,1,1,0],y:[220,120]}} exit={{opacity:0}}
+                    transition={{duration:1.4}}
+                    className="absolute left-[14%] text-cyan-300 font-black text-sm bg-slate-950/90 px-3 py-1 rounded-xl border border-cyan-500/40 shadow">{e.text}
                   </motion.div>
                 ))}
               </AnimatePresence>
               <AnimatePresence>
-                {rightFloatEffects.map(e => (
+                {rFx.map(e=>(
                   <motion.div key={e.id}
-                    initial={{ opacity:0, y:180, scale:0.7 }} animate={{ opacity:[0,1,1,0], y:[180,80] }} exit={{ opacity:0 }}
-                    transition={{ duration:1.3 }}
-                    className="absolute right-[14%] text-rose-300 font-black text-sm bg-slate-950/90 px-3 py-1 rounded-xl border border-rose-500/30 shadow">
-                    {e.text}
+                    initial={{opacity:0,y:220,scale:0.8}} animate={{opacity:[0,1,1,0],y:[220,120]}} exit={{opacity:0}}
+                    transition={{duration:1.4}}
+                    className="absolute right-[14%] text-rose-300 font-black text-sm bg-slate-950/90 px-3 py-1 rounded-xl border border-rose-500/40 shadow">{e.text}
                   </motion.div>
                 ))}
               </AnimatePresence>
             </div>
 
-            <svg viewBox="0 0 1000 320" className="w-full" style={{ maxHeight: 360 }}>
+            {/* SVG */}
+            <svg viewBox="0 0 1000 340" className="w-full" style={{ maxHeight:380, background:'linear-gradient(180deg,#06082a 0%,#0c1a5e 45%,#1a0a2e 100%)' }}>
               <defs>
-                <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#0c1445"/>
-                  <stop offset="60%"  stopColor="#1a2a6c"/>
-                  <stop offset="100%" stopColor="#7c3aed" stopOpacity="0.3"/>
+                <linearGradient id="tw-grass" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#15803d"/><stop offset="100%" stopColor="#14532d"/>
                 </linearGradient>
-                <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"  stopColor="#166534"/>
-                  <stop offset="100%" stopColor="#14532d"/>
-                </linearGradient>
-                <linearGradient id="groundG" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"  stopColor="#78350f"/>
-                  <stop offset="100%" stopColor="#451a03"/>
-                </linearGradient>
-                <linearGradient id="ropeG" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"  stopColor="#d97706"/>
-                  <stop offset="40%" stopColor="#b45309"/>
-                  <stop offset="100%" stopColor="#92400e"/>
-                </linearGradient>
-                <linearGradient id="leftTeamZone" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#1d4ed8" stopOpacity="0.15"/>
-                  <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0"/>
-                </linearGradient>
-                <linearGradient id="rightTeamZone" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#b91c1c" stopOpacity="0"/>
-                  <stop offset="100%" stopColor="#b91c1c" stopOpacity="0.15"/>
-                </linearGradient>
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                  <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                </filter>
               </defs>
 
-              {/* Sky */}
-              <rect width="1000" height="320" fill="url(#skyG)"/>
-
               {/* Stars */}
-              {[70,140,220,310,430,520,640,760,860,950,100,380,590,820].map((sx,i)=>(
-                <circle key={i} cx={sx} cy={20+i*7%40} r={i%3===0?2:1} fill="white" opacity={0.4+i%3*0.2}/>
-              ))}
-
-              {/* Clouds */}
-              {[[120,55],[400,40],[720,50],[900,65]].map(([cx,cy],i)=>(
-                <g key={i} opacity="0.18">
-                  <ellipse cx={cx} cy={cy} rx="55" ry="20" fill="white"/>
-                  <ellipse cx={cx-25} cy={cy+5} rx="30" ry="16" fill="white"/>
-                  <ellipse cx={cx+30} cy={cy+4} rx="35" ry="18" fill="white"/>
-                </g>
+              {[50,130,200,290,380,460,540,620,710,800,870,950,160,425,685,920].map((sx,i)=>(
+                <circle key={i} cx={sx} cy={12+i*6%40} r={i%4===0?2:1} fill="white" opacity={0.3+i%3*0.15}/>
               ))}
 
               {/* Mountains */}
-              <polygon points="0,200 120,120 240,200" fill="#1e1b4b" opacity="0.7"/>
-              <polygon points="100,200 230,100 360,200" fill="#1e1b4b" opacity="0.6"/>
-              <polygon points="640,200 770,105 900,200" fill="#1e1b4b" opacity="0.6"/>
-              <polygon points="800,200 920,118 1000,200" fill="#1e1b4b" opacity="0.7"/>
-              {/* Snow caps */}
-              <polygon points="120,120 140,135 100,135" fill="white" opacity="0.3"/>
-              <polygon points="230,100 250,120 210,120" fill="white" opacity="0.25"/>
-              <polygon points="770,105 790,125 750,125" fill="white" opacity="0.25"/>
+              <polygon points="0,225 100,142 200,225" fill="#08083a" opacity="0.8"/>
+              <polygon points="80,225 215,120 350,225" fill="#08083a" opacity="0.75"/>
+              <polygon points="650,225 785,124 920,225" fill="#08083a" opacity="0.75"/>
+              <polygon points="800,225 900,140 1000,225" fill="#08083a" opacity="0.8"/>
+              <polygon points="215,120 232,140 198,140" fill="white" opacity="0.22"/>
+              <polygon points="785,124 802,144 768,144" fill="white" opacity="0.2"/>
 
-              {/* Team zone tint */}
-              <rect x="0" y="0" width="490" height="320" fill="url(#leftTeamZone)"/>
-              <rect x="510" y="0" width="490" height="320" fill="url(#rightTeamZone)"/>
-
-              {/* Crowd silhouettes */}
-              {Array.from({length:26},(_,i)=>{
-                const cx = 18+i*38; const cy = 210-Math.abs(Math.sin(i)*12);
-                const h = 22+Math.abs(Math.cos(i*1.3)*10);
-                const col = i%5===0?'#3b82f6':i%5===1?'#ef4444':i%5===2?'#10b981':i%5===3?'#a855f7':'#f59e0b';
+              {/* Crowd */}
+              {Array.from({length:28},(_,i)=>{
+                const cx=18+i*36; const cy=220-Math.abs(Math.sin(i)*9);
+                const cc=['#3b82f6','#ef4444','#10b981','#a855f7','#f59e0b'][i%5];
                 return <g key={i}>
-                  <ellipse cx={cx} cy={cy+h} rx="10" ry="5" fill={col} opacity="0.5"/>
-                  <line x1={cx} y1={cy+h} x2={cx} y2={cy} stroke={col} strokeWidth="6" opacity="0.4" strokeLinecap="round"/>
-                  <circle cx={cx} cy={cy-8} r="8" fill={col} opacity="0.45"/>
+                  <line x1={cx} y1={cy+22} x2={cx} y2={cy} stroke={cc} strokeWidth="5" opacity="0.35" strokeLinecap="round"/>
+                  <circle cx={cx} cy={cy-9} r="9" fill={cc} opacity="0.38"/>
+                  <ellipse cx={cx} cy={cy+24} rx="11" ry="5" fill={cc} opacity="0.28"/>
                 </g>;
               })}
 
-              {/* Grass */}
-              <rect x="0" y="294" width="1000" height="26" fill="url(#grassG)"/>
-              {/* Grass blades */}
+              {/* Grass / ground */}
+              <rect x="0" y="308" width="1000" height="32" fill="url(#tw-grass)"/>
               {Array.from({length:50},(_,i)=>(
-                <line key={i} x1={i*20+5} y1={294} x2={i*20+(i%3-1)*4} y2={287} stroke="#15803d" strokeWidth="1.5" opacity="0.6"/>
+                <line key={i} x1={i*20+6} y1={308} x2={i*20+(i%3-1)*4} y2={300} stroke="#166534" strokeWidth="1.6" opacity="0.5"/>
               ))}
-              {/* Ground/dirt */}
-              <rect x="0" y="300" width="1000" height="20" fill="url(#groundG)"/>
+              <rect x="0" y="316" width="1000" height="24" fill="#78350F" opacity="0.55"/>
 
-              {/* Win zone markers */}
-              <line x1="180" y1="294" x2="180" y2="200" stroke="#3b82f6" strokeWidth="2" strokeDasharray="6,4" opacity="0.5"/>
-              <line x1="820" y1="294" x2="820" y2="200" stroke="#ef4444" strokeWidth="2" strokeDasharray="6,4" opacity="0.5"/>
-              <text x="130" y="195" fill="#60a5fa" fontSize="10" fontWeight="bold" textAnchor="middle" opacity="0.7">KO'K HUDUD</text>
-              <text x="870" y="195" fill="#f87171" fontSize="10" fontWeight="bold" textAnchor="middle" opacity="0.7">QIZIL HUDUD</text>
+              {/* Zone tints */}
+              <rect x="0"   y="0" width="490"  height="340" fill="#1d4ed8" opacity="0.04"/>
+              <rect x="510" y="0" width="490"  height="340" fill="#b91c1c" opacity="0.04"/>
+              <line x1="190" y1="308" x2="190" y2="225" stroke="#3b82f6" strokeWidth="2" strokeDasharray="6,4" opacity="0.38"/>
+              <line x1="810" y1="308" x2="810" y2="225" stroke="#ef4444" strokeWidth="2" strokeDasharray="6,4" opacity="0.38"/>
 
-              {/* ── CHARACTERS ── */}
-              {[220, 140, 60].map((bx, i) => {
-                const px = bx - ropePosition * 12;
-                return renderCharacter('left', px, leftState);
-              })}
-              {[780, 860, 940].map((bx, i) => {
-                const px = bx - ropePosition * 12;
-                return renderCharacter('right', px, rightState);
-              })}
+              {/* CHARACTERS */}
+              {[220,140,60].map(bx=>(
+                <TugChar key={bx} team="left"  baseX={bx+sh} state={lState}/>
+              ))}
+              {[780,860,940].map(bx=>(
+                <TugChar key={bx} team="right" baseX={bx+sh} state={rState}/>
+              ))}
 
-              {/* ── ROPE ── */}
-              {(() => {
-                const sag = isLeftPulling ? -6 : isRightPulling ? -6 : 4;
-                const leanL = isLeftPulling ? -8 : 0;
-                const leanR = isRightPulling ? -8 : 0;
-                const r1y = 290 + leanL;
-                const r2y = 290 + leanR;
-                return <>
-                  {/* Rope shadow */}
-                  <path d={`M 290,296 C 450,${296+sag+4} 550,${296+sag+4} 710,296`}
-                    stroke="rgba(0,0,0,0.35)" strokeWidth="12" fill="none" strokeLinecap="round"/>
-                  {/* Main rope */}
-                  <path d={`M 290,292 C 450,${292+sag} 550,${292+sag} 710,292`}
-                    stroke="url(#ropeG)" strokeWidth="11" fill="none" strokeLinecap="round"/>
-                  {/* Rope strands */}
-                  <path d={`M 290,289 C 450,${289+sag-2} 550,${289+sag-2} 710,289`}
-                    stroke="#fbbf24" strokeWidth="2.5" strokeDasharray="10,8" fill="none" opacity="0.5"/>
-                  <path d={`M 290,295 C 450,${295+sag+1} 550,${295+sag+1} 710,295`}
-                    stroke="#78350f" strokeWidth="2" strokeDasharray="8,10" fill="none" opacity="0.4"/>
-                  {/* Rope knots */}
-                  {[350,420,490,560,630].map((kx,i)=>{
-                    const t = (kx-290)/(710-290);
-                    const ky = 292 + sag * Math.sin(t*Math.PI) + 0;
-                    return <ellipse key={i} cx={kx} cy={ky} rx="7" ry="5" fill="#92400e" stroke="#d97706" strokeWidth="1"/>;
-                  })}
-                </>;
-              })()}
+              {/* ROPE */}
+              <TugRope ropePosition={ropePos} lPull={lPull} rPull={rPull}/>
 
-              {/* Center flag */}
-              {(() => {
-                const fx = 500 + ropePosition * 14;
-                const winning = ropePosition < -4 ? 'left' : ropePosition > 4 ? 'right' : null;
-                const flagColor = winning === 'left' ? '#3b82f6' : winning === 'right' ? '#ef4444' : '#e11d48';
-                return <g filter="url(#glow)">
-                  <line x1={fx} y1="260" x2={fx} y2="290" stroke="#fbbf24" strokeWidth="3"/>
-                  <polygon points={`${fx},260 ${fx+24},268 ${fx},276`} fill={flagColor} stroke="white" strokeWidth="1.5"/>
-                  <circle cx={fx} cy="291" r="5" fill="#fbbf24"/>
-                  {/* Glow under flag */}
-                  <ellipse cx={fx} cy="291" rx="8" ry="3" fill={flagColor} opacity="0.4" className="animate-pulse"/>
-                </g>;
-              })()}
+              {/* FLAG */}
+              <line x1={flagX} y1="258" x2={flagX} y2="308" stroke="#FBBF24" strokeWidth="4"/>
+              <polygon points={`${flagX},258 ${flagX+26},267 ${flagX},276`}
+                fill={ropePos<-4?'#3b82f6':ropePos>4?'#ef4444':'#e11d48'} stroke="white" strokeWidth="1.5"/>
+              <circle cx={flagX} cy="309" r="6" fill="#FBBF24"/>
 
-              {/* ── TENSION METER ── */}
-              <g transform="translate(500,22)">
-                <rect x="-160" y="0" width="320" height="14" rx="7" fill="#0f172a" stroke="#334155" strokeWidth="1"/>
-                <motion.rect x="-160" y="0"
-                  animate={{ width: `${getPercent() * 3.2}px` }}
-                  transition={{ type:'spring', stiffness:100, damping:15 }}
-                  height="14" rx="7"
-                  fill={getPercent() < 35 ? '#3b82f6' : getPercent() > 65 ? '#ef4444' : '#a855f7'}
-                  opacity="0.85"
-                />
-                <line x1="0" y1="0" x2="0" y2="14" stroke="white" strokeWidth="2" opacity="0.6"/>
-                <text x="-155" y="11" fontSize="8" fill="#93c5fd" fontWeight="bold">{teamLeft.name}</text>
-                <text x="155" y="11" fontSize="8" fill="#fca5a5" fontWeight="bold" textAnchor="end">{teamRight.name}</text>
+              {/* TENSION BAR */}
+              <g transform="translate(500,18)">
+                <rect x="-165" y="0" width="330" height="14" rx="7" fill="#0f172a" stroke="#1e293b" strokeWidth="1"/>
+                <motion.rect x="-165" y="0" height="14" rx="7"
+                  animate={{ width:`${pct*3.3}px` }}
+                  transition={{ type:'spring', stiffness:90, damping:14 }}
+                  fill={pct<35?'#3b82f6':pct>65?'#ef4444':'#a855f7'} opacity="0.9"/>
+                <line x1="0" y1="0" x2="0" y2="14" stroke="white" strokeWidth="2" opacity="0.5"/>
+                <text x="-160" y="11" fontSize="8" fill="#93c5fd" fontWeight="bold">{teamLeft.name}</text>
+                <text x="160"  y="11" fontSize="8" fill="#fca5a5" fontWeight="bold" textAnchor="end">{teamRight.name}</text>
               </g>
             </svg>
           </div>
 
-          {/* ── ANSWER TERMINALS ── */}
+          {/* TERMINALS */}
           {phase === 'battle' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-              {/* Left terminal */}
-              <div className={`p-5 rounded-3xl border-2 transition-all ${leftFrozen ? 'bg-rose-950/30 border-rose-500/60' : 'bg-slate-900/90 border-blue-500/40 hover:border-blue-500/70'}`}>
+              {/* Left */}
+              <div className={`p-5 rounded-3xl border-2 transition-all ${lFrozen?'bg-rose-950/30 border-rose-500/60':'bg-slate-900/90 border-blue-500/40'}`}>
                 <div className="flex justify-between items-center border-b border-slate-800 pb-2 mb-4">
-                  <span className="text-xs font-black uppercase tracking-wider" style={{ color: teamLeft.color }}>{teamLeft.emoji} {teamLeft.name}</span>
-                  <span className="text-[9px] font-mono text-slate-500">TERMINAL A</span>
+                  <span style={{color:teamLeft.color}} className="text-xs font-black uppercase">{teamLeft.emoji} {teamLeft.name}</span>
+                  <span className="text-[9px] text-slate-500 font-mono">TERMINAL A</span>
                 </div>
-                {leftFrozen ? (
-                  <div className="h-[190px] flex flex-col items-center justify-center gap-3">
-                    <AlertCircle className="w-12 h-12 text-rose-500 animate-bounce" />
+                {lFrozen ? (
+                  <div className="h-[188px] flex flex-col items-center justify-center gap-3">
+                    <AlertCircle className="w-12 h-12 text-rose-500 animate-bounce"/>
                     <h4 className="font-black text-rose-400 text-sm">XATO JAVOB! 😱</h4>
-                    <p className="text-[10px] text-slate-400">Arqon orqaga ketdi. 1.5s kutish...</p>
+                    <p className="text-[10px] text-slate-400">1.5 soniya kutish...</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="bg-slate-950 py-4 px-5 rounded-2xl border border-blue-500/20 shadow-inner">
+                    <div className="bg-slate-950 py-4 px-5 rounded-2xl border border-blue-500/20">
                       <span className="text-blue-400 text-[9px] uppercase font-black block mb-1">🔤 INGLIZCHASI NIMA?</span>
-                      <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-wide leading-tight">{leftWord.uz}</h3>
+                      <h3 className="text-lg md:text-xl font-black text-white uppercase">{lWord.uz}</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-2.5">
-                      {leftOptions.map((opt, i) => (
-                        <button key={i} onClick={() => handleLeftAnswer(opt)}
-                          className="bg-slate-950 hover:bg-blue-950/40 border border-slate-800 hover:border-blue-500 hover:text-blue-300 p-3 md:p-4 rounded-xl text-[11px] md:text-xs font-black text-white transition-all uppercase cursor-pointer active:scale-95 shadow">
+                      {lOpts.map((opt,i)=>(
+                        <button key={i} onClick={()=>answerLeft(opt)}
+                          className="bg-slate-950 hover:bg-blue-950/40 border border-slate-800 hover:border-blue-500 hover:text-blue-300 p-3 md:p-4 rounded-xl text-[11px] md:text-xs font-black text-white transition-all uppercase cursor-pointer active:scale-95">
                           {opt}
                         </button>
                       ))}
@@ -754,29 +778,28 @@ export default function TugOfWar({ teamLeft, teamRight, wordList, selectedDiffic
                   </div>
                 )}
               </div>
-
-              {/* Right terminal */}
-              <div className={`p-5 rounded-3xl border-2 transition-all ${rightFrozen ? 'bg-rose-950/30 border-rose-500/60' : 'bg-slate-900/90 border-red-500/40 hover:border-red-500/70'}`}>
+              {/* Right */}
+              <div className={`p-5 rounded-3xl border-2 transition-all ${rFrozen?'bg-rose-950/30 border-rose-500/60':'bg-slate-900/90 border-red-500/40'}`}>
                 <div className="flex justify-between items-center border-b border-slate-800 pb-2 mb-4">
-                  <span className="text-xs font-black uppercase tracking-wider" style={{ color: teamRight.color }}>{teamRight.emoji} {teamRight.name}</span>
-                  <span className="text-[9px] font-mono text-slate-500">TERMINAL B</span>
+                  <span style={{color:teamRight.color}} className="text-xs font-black uppercase">{teamRight.emoji} {teamRight.name}</span>
+                  <span className="text-[9px] text-slate-500 font-mono">TERMINAL B</span>
                 </div>
-                {rightFrozen ? (
-                  <div className="h-[190px] flex flex-col items-center justify-center gap-3">
-                    <AlertCircle className="w-12 h-12 text-rose-500 animate-bounce" />
+                {rFrozen ? (
+                  <div className="h-[188px] flex flex-col items-center justify-center gap-3">
+                    <AlertCircle className="w-12 h-12 text-rose-500 animate-bounce"/>
                     <h4 className="font-black text-rose-400 text-sm">XATO JAVOB! 😱</h4>
-                    <p className="text-[10px] text-slate-400">Arqon orqaga ketdi. 1.5s kutish...</p>
+                    <p className="text-[10px] text-slate-400">1.5 soniya kutish...</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="bg-slate-950 py-4 px-5 rounded-2xl border border-red-500/20 shadow-inner">
+                    <div className="bg-slate-950 py-4 px-5 rounded-2xl border border-red-500/20">
                       <span className="text-red-400 text-[9px] uppercase font-black block mb-1">🔤 INGLIZCHASI NIMA?</span>
-                      <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-wide leading-tight">{rightWord.uz}</h3>
+                      <h3 className="text-lg md:text-xl font-black text-white uppercase">{rWord.uz}</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-2.5">
-                      {rightOptions.map((opt, i) => (
-                        <button key={i} onClick={() => handleRightAnswer(opt)}
-                          className="bg-slate-950 hover:bg-red-950/40 border border-slate-800 hover:border-red-500 hover:text-red-300 p-3 md:p-4 rounded-xl text-[11px] md:text-xs font-black text-white transition-all uppercase cursor-pointer active:scale-95 shadow">
+                      {rOpts.map((opt,i)=>(
+                        <button key={i} onClick={()=>answerRight(opt)}
+                          className="bg-slate-950 hover:bg-red-950/40 border border-slate-800 hover:border-red-500 hover:text-red-300 p-3 md:p-4 rounded-xl text-[11px] md:text-xs font-black text-white transition-all uppercase cursor-pointer active:scale-95">
                           {opt}
                         </button>
                       ))}
@@ -787,27 +810,26 @@ export default function TugOfWar({ teamLeft, teamRight, wordList, selectedDiffic
             </div>
           )}
 
-          {/* ── VICTORY SCREEN ── */}
+          {/* WIN SCREEN */}
           {phase === 'ended' && (
-            <motion.div initial={{ scale:0.8, opacity:0 }} animate={{ scale:1, opacity:1 }} transition={{ type:'spring', stiffness:200 }}
-              className="bg-gradient-to-br from-amber-950/50 via-slate-900 to-indigo-950/50 border-2 border-amber-500/40 py-10 px-8 rounded-3xl text-center space-y-4 mt-2 max-w-lg mx-auto relative overflow-hidden shadow-2xl">
+            <motion.div initial={{scale:0.8,opacity:0}} animate={{scale:1,opacity:1}} transition={{type:'spring',stiffness:200}}
+              className="bg-gradient-to-br from-amber-950/50 via-slate-900 to-indigo-950/50 border-2 border-amber-500/40 py-10 px-8 rounded-3xl text-center space-y-4 max-w-lg mx-auto shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400"/>
-              <motion.div animate={{ rotate:[0,10,-10,0], scale:[1,1.2,1] }} transition={{ repeat:Infinity, duration:1.5 }}>
+              <motion.div animate={{rotate:[0,10,-10,0],scale:[1,1.2,1]}} transition={{repeat:Infinity,duration:1.5}}>
                 <Sparkles className="w-14 h-14 text-yellow-400 mx-auto"/>
               </motion.div>
               <div>
                 <span className="text-[10px] text-yellow-500 font-extrabold tracking-widest uppercase block">🎊 MUSOBAQA YAKUNLANDI! 🎊</span>
                 <h3 className="text-3xl font-black text-white uppercase mt-2">
-                  {winnerSide === 'left' ? teamLeft.name : teamRight.name}
+                  {winner==='left'?teamLeft.name:teamRight.name}
                 </h3>
                 <p className="text-xl font-black text-yellow-400 mt-1">G'ALABA QOZONDI! 🏆</p>
               </div>
               <div className="flex justify-center gap-4 text-4xl">
-                <motion.span animate={{ y:[0,-10,0] }} transition={{ repeat:Infinity, duration:0.8 }}>🥇</motion.span>
-                <motion.span animate={{ y:[0,-10,0] }} transition={{ repeat:Infinity, duration:0.8, delay:0.2 }}>🎉</motion.span>
-                <motion.span animate={{ y:[0,-10,0] }} transition={{ repeat:Infinity, duration:0.8, delay:0.4 }}>⭐</motion.span>
+                {(['🥇','🎉','⭐'] as const).map((e,i)=>(
+                  <motion.span key={i} animate={{y:[0,-10,0]}} transition={{repeat:Infinity,duration:0.8,delay:i*0.2}}>{e}</motion.span>
+                ))}
               </div>
-              <p className="text-xs text-slate-400">Natijalar saqlanmoqda...</p>
             </motion.div>
           )}
         </div>
