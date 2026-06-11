@@ -45,6 +45,22 @@ const ANTONYM_PAIRS: { word: string; antonym: string; others: string[] }[] = [
   { word: 'clean', antonym: 'dirty', others: ['noisy', 'cold', 'flat'] },
 ];
 
+// Analogies for analogy-quiz (reuses antonym-duel handler)
+const ANALOGY_ITEMS: { question: string; answer: string; others: string[] }[] = [
+  { question: 'Big → Small :: Hot → ?', answer: 'cold', others: ['warm', 'soft', 'quiet'] },
+  { question: 'Cat → Kitten :: Dog → ?', answer: 'puppy', others: ['cub', 'chick', 'lamb'] },
+  { question: 'Teacher → School :: Doctor → ?', answer: 'hospital', others: ['office', 'market', 'court'] },
+  { question: 'Eye → See :: Ear → ?', answer: 'hear', others: ['taste', 'smell', 'touch'] },
+  { question: 'Day → Night :: Morning → ?', answer: 'evening', others: ['weekend', 'midnight', 'holiday'] },
+  { question: 'Book → Read :: Song → ?', answer: 'listen', others: ['watch', 'touch', 'count'] },
+  { question: 'Fish → Water :: Bird → ?', answer: 'sky', others: ['forest', 'ground', 'desert'] },
+  { question: 'Hand → Glove :: Head → ?', answer: 'hat', others: ['shoes', 'jacket', 'belt'] },
+  { question: 'Summer → Hot :: Winter → ?', answer: 'cold', others: ['dark', 'windy', 'long'] },
+  { question: 'Apple → Fruit :: Carrot → ?', answer: 'vegetable', others: ['grain', 'spice', 'liquid'] },
+  { question: 'Run → Fast :: Sleep → ?', answer: 'slow', others: ['loud', 'warm', 'soft'] },
+  { question: 'London → England :: Paris → ?', answer: 'France', others: ['Germany', 'Italy', 'Spain'] },
+];
+
 // Grammar error sentences for sentence-fix
 const WRONG_SENTENCES: { wrong: string; correct: string; errorWord: string; fixWord: string; uz: string }[] = [
   { wrong: 'She go to school every day.', correct: 'She goes to school every day.', errorWord: 'go', fixWord: 'goes', uz: 'U har kuni maktabga boradi.' },
@@ -121,6 +137,7 @@ export default function DuelGames({ gameType, teamLeft, teamRight, wordList, max
     if (id === 'speed-quiz' || id === 'vocab-blitz') return 'word-duel';
     if (id === 'word-race') return 'spelling-race';
     if (id === 'emoji-battle') return 'flashcard-battle';
+    if (id === 'analogy-quiz') return 'antonym-duel';
     return id;
   };
 
@@ -196,9 +213,15 @@ export default function DuelGames({ gameType, teamLeft, teamRight, wordList, max
     }
 
     if (effectiveType === 'antonym-duel') {
-      const item = ANTONYM_PAIRS[Math.floor(Math.random() * ANTONYM_PAIRS.length)];
-      setAntonymItem(item);
-      setAntonymOptions([item.antonym, ...item.others].sort(() => Math.random() - 0.5));
+      if (gameType === 'analogy-quiz') {
+        const item = ANALOGY_ITEMS[Math.floor(Math.random() * ANALOGY_ITEMS.length)];
+        setAntonymItem({ word: item.question, antonym: item.answer, others: item.others });
+        setAntonymOptions([item.answer, ...item.others].sort(() => Math.random() - 0.5));
+      } else {
+        const item = ANTONYM_PAIRS[Math.floor(Math.random() * ANTONYM_PAIRS.length)];
+        setAntonymItem(item);
+        setAntonymOptions([item.antonym, ...item.others].sort(() => Math.random() - 0.5));
+      }
     }
 
     if (effectiveType === 'sentence-fix') {
@@ -426,7 +449,7 @@ export default function DuelGames({ gameType, teamLeft, teamRight, wordList, max
     'emoji-battle': 'Emoji Battle 🎮', 'grammar-clash': 'Grammar Clash 🔬',
     'synonym-duel': 'Synonym Duel 🔁', 'antonym-duel': 'Antonym Duel 🔃',
     'vocab-blitz': 'Vocab Blitz 🌪️', 'sentence-fix': 'Sentence Fix 🔧',
-    'word-race': 'Word Race 🏁',
+    'word-race': 'Word Race 🏁', 'analogy-quiz': 'Analogiya Testi 🔗',
   };
 
   const renderFreezeOverlay = (froze: boolean, wrongItem: string | null) => (
@@ -505,8 +528,12 @@ export default function DuelGames({ gameType, teamLeft, teamRight, wordList, max
           )}
           {effectiveType === 'antonym-duel' && (
             <div>
-              <span className="text-[10px] text-slate-500 uppercase font-black block">Antonimini toping:</span>
-              <h3 className="text-3xl font-black text-purple-400 uppercase">{antonymItem.word}</h3>
+              <span className="text-[10px] text-slate-500 uppercase font-black block">
+                {gameType === 'analogy-quiz' ? 'Analogiyani to\'ldiring:' : 'Antonimini toping:'}
+              </span>
+              <h3 className={`font-black text-purple-400 uppercase ${gameType === 'analogy-quiz' ? 'text-xl' : 'text-3xl'}`}>
+                {antonymItem.word}
+              </h3>
             </div>
           )}
           {effectiveType === 'sentence-fix' && (
@@ -538,7 +565,7 @@ export default function DuelGames({ gameType, teamLeft, teamRight, wordList, max
               <h3 className="text-2xl font-black text-amber-400 uppercase">{targetWord.uz}</h3>
             </div>
           )}
-          {!['word-duel','flashcard-battle','true-false','spelling-race','sentence-duel','word-bomb','antonym-duel','sentence-fix','definition-duel','grammar-clash','synonym-duel'].includes(effectiveType) && (
+          {!['word-duel','flashcard-battle','true-false','spelling-race','sentence-duel','word-bomb','antonym-duel','sentence-fix','definition-duel','grammar-clash','synonym-duel'].includes(effectiveType) && gameType !== 'analogy-quiz' && (
             <span className="text-sm font-black text-white">{gameTitle[gameType] || gameType}</span>
           )}
         </div>

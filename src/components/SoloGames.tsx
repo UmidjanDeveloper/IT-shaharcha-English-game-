@@ -179,6 +179,10 @@ export default function SoloGames({ gameType, wordList, onAddScore, onNextQuesti
   const [flashIndex, setFlashIndex] = useState(0);
   const [flashRevealed, setFlashRevealed] = useState(false);
 
+  // odd-one-out
+  const [oddSet, setOddSet] = useState<{words:string[];odd:string;reason:string}|null>(null);
+  const [oddSelected, setOddSelected] = useState<string|null>(null);
+
   const addScore = (pts: number) => {
     sound.playCorrect();
     setFeedback('correct');
@@ -325,6 +329,33 @@ export default function SoloGames({ gameType, wordList, onAddScore, onNextQuesti
       setFlashItems(shuffled);
       setFlashIndex(0);
       setFlashRevealed(false);
+    }
+
+    if (gameType === 'odd-one-out') {
+      const sets = [
+        {words:['cat','dog','table','bird'],odd:'table',reason:"Mebel — hayvon emas"},
+        {words:['red','blue','car','green'],odd:'car',reason:"Mashina — rang emas"},
+        {words:['apple','orange','milk','banana'],odd:'milk',reason:"Sut — meva emas"},
+        {words:['happy','sad','run','angry'],odd:'run',reason:"Yugurish — his-tuyg'u emas"},
+        {words:['teacher','doctor','school','nurse'],odd:'school',reason:"Maktab — kasb emas"},
+        {words:['Monday','Tuesday','July','Friday'],odd:'July',reason:"Oy — kunlar emas"},
+        {words:['swim','run','book','jump'],odd:'book',reason:"Kitob — harakat emas"},
+        {words:['lion','elephant','rose','giraffe'],odd:'rose',reason:"Gul — hayvon emas"},
+        {words:['kitchen','bedroom','chair','bathroom'],odd:'chair',reason:"Stul — xona emas"},
+        {words:['pizza','guitar','burger','sandwich'],odd:'guitar',reason:"Gitara — taom emas"},
+        {words:['sunny','rainy','cloudy','winter'],odd:'winter',reason:"Qish — ob-havo emas"},
+        {words:['eye','nose','finger','knee'],odd:'finger',reason:"Barmoq — yuz qismi emas"},
+        {words:['bus','car','plane','bicycle'],odd:'bicycle',reason:"Velosiped — dvigatorli emas"},
+        {words:['England','France','Paris','Germany'],odd:'Paris',reason:"Shahar — mamlakat emas"},
+        {words:['speak','write','listen','pencil'],odd:'pencil',reason:"Qalam — til ko'nikma emas"},
+        {words:['coffee','tea','juice','bread'],odd:'bread',reason:"Non — ichimlik emas"},
+        {words:['rose','tulip','sunflower','oak'],odd:'oak',reason:"Eman — gul emas, daraxt"},
+        {words:['hammer','knife','saw','spoon'],odd:'spoon',reason:"Qoshiq — asbob emas"},
+        {words:['spring','summer','morning','autumn'],odd:'morning',reason:"Ertalab — fasl emas"},
+        {words:['circle','square','heavy','triangle'],odd:'heavy',reason:"Og'ir — shakl emas"},
+      ];
+      setOddSet(sets[Math.floor(Math.random()*sets.length)]);
+      setOddSelected(null);
     }
   };
 
@@ -478,6 +509,7 @@ export default function SoloGames({ gameType, wordList, onAddScore, onNextQuesti
     'grammar-choose': 'Grammatika 📚',
     'word-builder': 'So\'z Quruvchi 🏗️',
     'flashcard-solo': 'Flashcard Solo 🃏',
+    'odd-one-out': 'Odd One Out 🎭',
   };
 
   return (
@@ -867,6 +899,47 @@ export default function SoloGames({ gameType, wordList, onAddScore, onNextQuesti
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ===== ODD ONE OUT ===== */}
+      {gameType === 'odd-one-out' && oddSet && (
+        <div className="text-center py-4 space-y-6">
+          <div className="space-y-1">
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Qaysi so'z bu guruhga mos kelmaydi?</p>
+            <p className="text-slate-500 text-[10px]">4 ta so'zdan biri boshqalardan farqli kategoriyaga tegishli</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
+            {oddSet.words.map(w => {
+              const isSelected = oddSelected === w;
+              const isCorrect = oddSelected !== null && w === oddSet.odd;
+              const isWrong = isSelected && w !== oddSet.odd;
+              return (
+                <button
+                  key={w}
+                  disabled={oddSelected !== null}
+                  onClick={() => {
+                    setOddSelected(w);
+                    if (w === oddSet.odd) { addScore(3); }
+                    else { wrongAnswer(); }
+                  }}
+                  className={`p-4 rounded-2xl border text-lg font-black uppercase transition-all cursor-pointer ${
+                    isCorrect ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' :
+                    isWrong ? 'bg-rose-500/20 border-rose-500 text-rose-400' :
+                    oddSelected !== null ? 'bg-slate-950 border-slate-800 text-slate-500' :
+                    'bg-slate-900 border-slate-700 hover:border-cyan-500 hover:bg-slate-800 text-white'
+                  }`}
+                >
+                  {w}
+                </button>
+              );
+            })}
+          </div>
+          {oddSelected && (
+            <p className="text-sm font-bold text-amber-400 animate-pulse">
+              {oddSet.odd === oddSelected ? `✅ To'g'ri! ${oddSet.odd} — ${oddSet.reason}` : `❌ Xato! To'g'ri javob: "${oddSet.odd}" — ${oddSet.reason}`}
+            </p>
+          )}
         </div>
       )}
 

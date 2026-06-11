@@ -40,20 +40,21 @@ export default function VocabularyGame({
       'spelling-bee', 'hangman', 'word-search', 'anagram', 'fill-blank',
       'emoji-quiz', 'synonym-find', 'definition-quiz', 'word-scramble',
       'listening-quiz', 'vocab-speed', 'letter-hint', 'grammar-choose',
-      'word-builder', 'flashcard-solo'
+      'word-builder', 'flashcard-solo', 'odd-one-out'
     ];
     const duelList: GameType[] = [
       'word-duel', 'flashcard-battle', 'spelling-race', 'sentence-duel',
       'true-false', 'sentence-sprint', 'phrase-builder',
       'speed-quiz', 'word-bomb', 'definition-duel', 'emoji-battle',
       'grammar-clash', 'synonym-duel', 'antonym-duel', 'vocab-blitz',
-      'sentence-fix', 'word-race'
+      'sentence-fix', 'word-race', 'analogy-quiz'
     ];
     const teamList: GameType[] = [
       'team-quiz', 'category-sort', 'word-chain', 'hot-seat', 'pictionary',
       'memory-match', 'tug-of-war', 'category-quiz', 'memory-rush', 'picture-quest',
       'vocabulary-bingo', 'english-taboo', 'team-spelling', 'word-pyramid',
-      'vocab-relay', 'story-builder', 'word-wheel', 'grammar-team', 'speed-sort'
+      'vocab-relay', 'story-builder', 'word-wheel', 'grammar-team', 'speed-sort',
+      'password-game'
     ];
 
     if (soloList.includes(gameId)) return 'solo';

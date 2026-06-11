@@ -429,8 +429,8 @@ export default function TugOfWar({
     setWords(ws);setPhase('battle');setRop(0);
     gq('l',ws,[...ws].sort(()=>Math.random()-.5));
     gq('r',ws,[...ws].sort(()=>Math.random()-.5));
-    // Unmute on user interaction (trusted event bypass)
-    setTimeout(()=>{yt('unMute');yt('setVolume',[88]);yt('playVideo');},200);
+    // Unmute synchronously inside click handler (trusted event)
+    yt('unMute');yt('setVolume',[88]);yt('playVideo');
   };
   const gq=(side:'l'|'r',pool:WordPair[],cur:WordPair[])=>{
     let a=[...cur];if(!a.length)a=[...pool].sort(()=>Math.random()-.5);
@@ -504,7 +504,7 @@ export default function TugOfWar({
 
   // YouTube embed URL with origin for better CSP compatibility
   const ytOrigin = typeof window!=='undefined' ? encodeURIComponent(window.location.origin) : '';
-  const ytSrc = `https://www.youtube.com/embed/g1YohGdFIXM?autoplay=1&loop=1&playlist=g1YohGdFIXM&controls=0&mute=1&enablejsapi=1&origin=${ytOrigin}`;
+  const ytSrc = `https://www.youtube.com/embed/f_GbjtoGsr4?autoplay=1&loop=1&playlist=f_GbjtoGsr4&controls=0&mute=1&enablejsapi=1&origin=${ytOrigin}`;
 
   return(
     <div className={`w-full max-w-6xl mx-auto px-2 py-2 select-none transition-transform duration-75 ${shake?'translate-x-0.5':''}`}>
@@ -525,7 +525,7 @@ export default function TugOfWar({
           </div>
           <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-900">
             <span className="text-xs text-slate-300 font-bold flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block"/>🎵 Andijon Polkasi
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block"/>🎵 Game Show Music
             </span>
             <button onClick={()=>{sound.playTap();setMusicOn(!musicOn);}}
               className={`py-1.5 px-4 rounded-xl border text-[10px] font-black uppercase cursor-pointer ${musicOn?'bg-emerald-500/10 text-emerald-400 border-emerald-500/30':'bg-slate-900 text-slate-400 border-slate-700'}`}>

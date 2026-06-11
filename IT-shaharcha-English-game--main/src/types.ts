@@ -62,7 +62,11 @@ export type GameType =
   | 'story-builder'
   | 'word-wheel'
   | 'grammar-team'
-  | 'speed-sort';
+  | 'speed-sort'
+  // === NEW UNIQUE GAMES ===
+  | 'odd-one-out'
+  | 'analogy-quiz'
+  | 'password-game';
 
 export type GameDifficulty = 'beginner' | 'elementary' | 'advanced' | 'custom';
 
@@ -72,6 +76,7 @@ export interface GameMetadata {
   id: GameType;
   title: string;
   description: string;
+  howToPlay: string[];
   mode: GameMode;
   icon: string;
 }

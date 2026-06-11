@@ -181,6 +181,13 @@ export default function TeamGames({
   const [grammarIdx, setGrammarIdx] = useState(0);
   const [grammarAns, setGrammarAns] = useState<'correct' | 'wrong' | null>(null);
 
+  // Password Game
+  const [pwdWord, setPwdWord] = useState<WordPair>({ uz: 'Olma', en: 'Apple' });
+  const [pwdPhase, setPwdPhase] = useState<'clue'|'guess'|'result'>('clue');
+  const [pwdOptions, setPwdOptions] = useState<string[]>([]);
+  const [pwdResult, setPwdResult] = useState<'correct'|'wrong'|null>(null);
+  const [pwdTeam, setPwdTeam] = useState<'left'|'right'>('left');
+
   // 6. Word Chain Relay state
   const [chainHistory, setChainHistory] = useState<string[]>(['apple']);
   const [chainInput, setChainInput] = useState('');
@@ -286,6 +293,16 @@ export default function TeamGames({
     if (effectiveGameType === 'grammar-team') {
       setGrammarIdx(Math.floor(Math.random() * GRAMMAR_SENTENCES.length));
       setGrammarAns(null);
+    }
+
+    // --- Password Game ---
+    if (gameType === 'password-game') {
+      const w = wordList[Math.floor(Math.random() * wordList.length)];
+      setPwdWord(w);
+      setPwdPhase('clue');
+      setPwdResult(null);
+      const others = wordList.filter(x => x.en !== w.en).map(x => x.en).sort(() => Math.random() - 0.5).slice(0, 2);
+      setPwdOptions([w.en, ...others].sort(() => Math.random() - 0.5));
     }
 
     if (effectiveGameType === 'memory-match') {
@@ -782,6 +799,7 @@ export default function TeamGames({
           {effectiveGameType === 'story-builder' && 'Hikoya Tuzish (Story Builder)'}
           {effectiveGameType === 'word-wheel' && 'So\'z G\'ildiragi (Word Wheel)'}
           {effectiveGameType === 'grammar-team' && 'Jamoaviy Grammatika (Grammar Team)'}
+          {gameType === 'password-game' && 'Parol O\'yini 🔑'}
         </div>
 
         <div>
@@ -1479,6 +1497,88 @@ export default function TeamGames({
             {grammarAns && (
               <div className={`py-4 rounded-2xl font-black text-lg border ${grammarAns === 'correct' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-rose-500/20 border-rose-500 text-rose-400'}`}>
                 {grammarAns === 'correct' ? '🎉 To\'g\'ri javob!' : '❌ Xato javob!'}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== PASSWORD GAME ===== */}
+        {gameType === 'password-game' && (
+          <div className="space-y-5">
+            <div className="text-center space-y-1">
+              <p className="text-xs text-slate-400 uppercase font-black tracking-widest">Parol O'yini 🔑</p>
+              <p className="text-[10px] text-slate-500">
+                {pwdTeam === 'left' ? teamLeft.name : teamRight.name} jamoasi o'yinchi bitta inglizcha so'z bilan belgi beradi
+              </p>
+            </div>
+
+            {pwdPhase === 'clue' && (
+              <div className="space-y-4">
+                <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-6 text-center">
+                  <p className="text-[10px] text-amber-400 uppercase font-black mb-2">So'z (faqat beruvchi ko'radi):</p>
+                  <p className="text-3xl font-black text-white">{pwdWord.en}</p>
+                  <p className="text-sm text-slate-400 mt-1">({pwdWord.uz})</p>
+                </div>
+                <p className="text-center text-xs text-slate-400">
+                  Jamoangizga BITTA inglizcha so'z bilan belgi bering (gapirib), keyin quyidagi tugmani bosing:
+                </p>
+                <button
+                  onClick={() => setPwdPhase('guess')}
+                  className="w-full py-4 bg-indigo-500 hover:bg-indigo-400 text-white font-black rounded-2xl uppercase text-sm transition-all"
+                >
+                  Belgi berildi — Jamoa taxmin qilsin 🎯
+                </button>
+              </div>
+            )}
+
+            {pwdPhase === 'guess' && (
+              <div className="space-y-4">
+                <p className="text-center text-sm font-bold text-white">
+                  {pwdTeam === 'left' ? teamLeft.name : teamRight.name} jamoasi: qaysi so'z?
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  {pwdOptions.map(opt => (
+                    <button
+                      key={opt}
+                      onClick={() => {
+                        const correct = opt === pwdWord.en;
+                        setPwdResult(correct ? 'correct' : 'wrong');
+                        setPwdPhase('result');
+                        if (correct) {
+                          sound.playCorrect();
+                          if (pwdTeam === 'left') addScoreLeft(2); else addScoreRight(2);
+                        } else {
+                          sound.playIncorrect();
+                        }
+                      }}
+                      className="py-5 rounded-2xl border font-black text-base uppercase bg-slate-900 border-slate-700 hover:border-indigo-500 hover:bg-slate-800 text-white transition-all cursor-pointer"
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {pwdPhase === 'result' && (
+              <div className="space-y-4 text-center">
+                <div className={`py-6 rounded-2xl border font-black text-xl ${pwdResult === 'correct' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-rose-500/20 border-rose-500 text-rose-400'}`}>
+                  {pwdResult === 'correct' ? `🎉 To'g'ri! So'z: "${pwdWord.en}"` : `❌ Xato! To'g'ri so'z: "${pwdWord.en}"`}
+                </div>
+                <button
+                  onClick={() => {
+                    setPwdTeam(t => t === 'left' ? 'right' : 'left');
+                    const w = wordList[Math.floor(Math.random() * wordList.length)];
+                    setPwdWord(w);
+                    setPwdPhase('clue');
+                    setPwdResult(null);
+                    const others = wordList.filter(x => x.en !== w.en).map(x => x.en).sort(() => Math.random() - 0.5).slice(0, 2);
+                    setPwdOptions([w.en, ...others].sort(() => Math.random() - 0.5));
+                  }}
+                  className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white font-black rounded-2xl uppercase text-sm border border-slate-700 transition-all"
+                >
+                  Keyingi so'z →
+                </button>
               </div>
             )}
           </div>
