@@ -71,6 +71,7 @@ export default function App() {
 
   const handleReset = () => {
     sound.playTap();
+    setAppSection('games');
     setGameState('setup');
     setWinner(null);
   };
@@ -171,7 +172,7 @@ export default function App() {
       {/* Beautiful humble footer */}
       <footer className="w-full text-center py-4 border-t border-slate-900/40 text-xs text-slate-500 bg-slate-950 relative z-10 select-none">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>IT Shaharcha • Xatirchi tumani • Yoshlar Axborot Texnologiyalari Markazi</span>
+          <span className="cursor-pointer hover:text-white transition-colors" onClick={handleReset}>IT Shaharcha • Xatirchi tumani • Yoshlar Axborot Texnologiyalari Markazi</span>
           <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wide">IQ-ARENA INTERFAOL DOSKA TAYYOR TIZIMI</span>
         </div>
       </footer>
