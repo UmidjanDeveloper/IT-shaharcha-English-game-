@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GameDifficulty, Team, GameType, GameMode, GameMetadata } from '../types';
 import { sound } from '../utils/audio';
-import { Gamepad2, Settings, ArrowRight, Sparkles, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+import { Gamepad2, Settings, ArrowRight, Sparkles, BookOpen, ChevronDown, ChevronUp, Mic } from 'lucide-react';
 
 interface SetupScreenProps {
   teamLeft: Team;
@@ -16,6 +16,7 @@ interface SetupScreenProps {
     maxScore: number;
   }) => void;
   onOpenTeacherSettings: () => void;
+  onOpenShadowing: () => void;
 }
 
 const ALL_GAMES: GameMetadata[] = [
@@ -574,7 +575,8 @@ export default function SetupScreen({
   maxScore,
   useCustomVocabulary,
   onStartGame,
-  onOpenTeacherSettings
+  onOpenTeacherSettings,
+  onOpenShadowing
 }: SetupScreenProps) {
   const [selectedGame, setSelectedGame] = useState<GameType>('word-duel');
   const [selectedDifficulty, setSelectedDifficulty] = useState<GameDifficulty>('beginner');
@@ -618,6 +620,31 @@ export default function SetupScreen({
         <p className="text-slate-400 max-w-lg mx-auto text-xs md:text-sm mt-2 leading-relaxed">
           54 ta interaktiv o'yin! Headway kitobiga asoslangan. Har bir o'yin ingliz tilini mukammal o'rgatadi.
         </p>
+      </div>
+
+      {/* Shadowing section entry */}
+      <div className="mb-6">
+        <button
+          onClick={() => { sound.playTap(); onOpenShadowing(); }}
+          className="w-full max-w-2xl mx-auto flex items-center justify-between gap-4 bg-gradient-to-r from-indigo-950/80 to-purple-950/80 border border-indigo-500/40 hover:border-indigo-400/70 rounded-3xl px-6 py-4 cursor-pointer transition-all group shadow-xl shadow-indigo-500/10 hover:shadow-indigo-500/20"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg flex-shrink-0">
+              <Mic className="w-6 h-6 text-white" />
+            </div>
+            <div className="text-left">
+              <p className="text-xs font-black text-indigo-300 uppercase tracking-widest">Yangi bo'lim ✨</p>
+              <h3 className="text-base font-black text-white">🎤 Shadowing Mashqi</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">Tinglang → Gapirib ko'ring → Talaffuzingizni baholang</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-[10px] bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-1 rounded-full font-black uppercase">
+              54 mashq
+            </span>
+            <ArrowRight className="w-5 h-5 text-indigo-400 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">

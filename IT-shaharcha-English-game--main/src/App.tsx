@@ -5,9 +5,11 @@ import SetupScreen from './components/SetupScreen';
 import VocabularyGame from './components/VocabularyGame';
 import Leaderboard from './components/Leaderboard';
 import TeacherSettings from './components/TeacherSettings';
+import ShadowingGame from './components/ShadowingGame';
 import { sound } from './utils/audio';
 
 export default function App() {
+  const [appSection, setAppSection] = useState<'games' | 'shadowing'>('games');
   const [gameState, setGameState] = useState<GameState>('setup');
   const [selectedGame, setSelectedGame] = useState<GameType>('word-duel');
   const [selectedDifficulty, setSelectedDifficulty] = useState<GameDifficulty>('beginner');
@@ -98,7 +100,13 @@ export default function App() {
 
       {/* Primary Game Display Window */}
       <main className="flex-1 w-full flex flex-col justify-start relative z-10">
-        {gameState === 'setup' && (
+
+        {/* Shadowing Section */}
+        {appSection === 'shadowing' && (
+          <ShadowingGame onBack={() => setAppSection('games')} />
+        )}
+
+        {appSection === 'games' && gameState === 'setup' && (
           <SetupScreen
             teamLeft={teamLeft}
             teamRight={teamRight}
@@ -106,10 +114,11 @@ export default function App() {
             useCustomVocabulary={useCustomVocabulary}
             onStartGame={handleStartGame}
             onOpenTeacherSettings={() => setShowTeacherSettings(true)}
+            onOpenShadowing={() => setAppSection('shadowing')}
           />
         )}
 
-        {gameState === 'playing' && (
+        {appSection === 'games' && gameState === 'playing' && (
           <div className="flex-1 w-full bg-slate-950/85 backdrop-blur-[2px] transition-all">
             <VocabularyGame
               selectedGame={selectedGame}
@@ -124,7 +133,7 @@ export default function App() {
           </div>
         )}
 
-        {gameState === 'ended' && winner && (
+        {appSection === 'games' && gameState === 'ended' && winner && (
           <Leaderboard
             winner={winner}
             leftTeam={{ ...teamLeft, score: leftScore }}
