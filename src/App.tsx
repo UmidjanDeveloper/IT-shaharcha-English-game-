@@ -6,10 +6,11 @@ import VocabularyGame from './components/VocabularyGame';
 import Leaderboard from './components/Leaderboard';
 import TeacherSettings from './components/TeacherSettings';
 import ShadowingGame from './components/ShadowingGame';
+import DubbingGame from './components/DubbingGame';
 import { sound } from './utils/audio';
 
 export default function App() {
-  const [appSection, setAppSection] = useState<'games' | 'shadowing'>('games');
+  const [appSection, setAppSection] = useState<'games' | 'shadowing' | 'dubbing'>('games');
   const [gameState, setGameState] = useState<GameState>('setup');
   const [selectedGame, setSelectedGame] = useState<GameType>('word-duel');
   const [selectedDifficulty, setSelectedDifficulty] = useState<GameDifficulty>('beginner');
@@ -106,6 +107,11 @@ export default function App() {
           <ShadowingGame onBack={() => setAppSection('games')} />
         )}
 
+        {/* Dubbing Section */}
+        {appSection === 'dubbing' && (
+          <DubbingGame onBack={() => setAppSection('games')} />
+        )}
+
         {appSection === 'games' && gameState === 'setup' && (
           <SetupScreen
             teamLeft={teamLeft}
@@ -115,6 +121,7 @@ export default function App() {
             onStartGame={handleStartGame}
             onOpenTeacherSettings={() => setShowTeacherSettings(true)}
             onOpenShadowing={() => setAppSection('shadowing')}
+            onOpenDubbing={() => setAppSection('dubbing')}
           />
         )}
 
