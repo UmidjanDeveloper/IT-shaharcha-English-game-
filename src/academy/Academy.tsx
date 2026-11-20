@@ -18,7 +18,7 @@ import type { GameType } from '../types';
 import { Workshop, workshops } from './Workshop';
 import './academy.css';
 import { MockHistory } from './MockHistory';
-import { AiTeacher, askTeacher } from './AiTeacher';
+import { AiTeacher, askTeacher, openClassroom } from './AiTeacher';
 import { ClassLockButton, useClassLock } from './ClassLock';
 import type { CefrLevel } from './grammar/curriculum';
 import type { GrammarGameId } from './grammar/GrammarCourse';
@@ -27,6 +27,7 @@ const OfficialIELTS = lazy(()=>import('./OfficialStudio').then(m=>({ default:m.O
 const MockExam = lazy(() => import('./MockExam').then(m => ({ default: m.MockExam })));
 const BoardArena = lazy(() => import('./BoardArena').then(m => ({ default: m.BoardArena })));
 const ClassicGames = lazy(() => import('../App'));
+const World3D = lazy(() => import('./World3D'));
 const GrammarCourse = lazy(() => import('./grammar/GrammarCourse').then(m => ({ default: m.GrammarCourse })));
 const GrammarGame = lazy(() => import('./grammar/GrammarCourse').then(m => ({ default: m.GrammarGame })));
 
@@ -192,14 +193,22 @@ export default function Academy() {
 
         {screen === 'home' && !activity && (
           <>
-            <section className="club-cover">
-              <div className="club-cover-copy"><span>IT SHAHARCHA · XATIRCHI</span>
-                <h1>Ingliz tilini<br/>qayerdan boshlaymiz?</h1>
-                <p>Darajangizni tanlang, sinfdoshlar bilan o‘ynang yoki IELTS ko‘nikmalarini mashq qiling.</p>
-                <div><button className="primary-button" onClick={openActivities}>Dars tanlash <ArrowDown size={17}/></button>
-                <button className="cover-link" onClick={showLibrary}>O‘yin tanlash →</button></div>
-              </div>
-            </section>
+            <Suspense fallback={<section className="club-cover"><div className="club-cover-copy"><span>IT SHAHARCHA · XATIRCHI</span><h1>Ingliz tilini<br/>qayerdan boshlaymiz?</h1></div></section>}>
+              <World3D onSelect={section => {
+                if (section === 'grammar') openGrammar();
+                else if (section === 'ielts') official();
+                else if (section === 'games') showLibrary();
+                else if (section === 'speaking') { if (level === 'ielts') official(); else openExercise('speaking'); }
+                else openClassroom();
+              }}>
+                <div className="world-copy"><span>IT SHAHARCHA · 3D ENGLISH WORLD</span>
+                  <h1>Ingliz tilini<br/>3D dunyoda o‘rganing</h1>
+                  <p>Binolarni bosing: grammatika minorasi, IELTS markazi, Speaking studiyasi va o‘yinlar. Ustoz bilan o‘zbekcha yoki inglizcha gaplashing.</p>
+                  <div><button className="primary-button" onClick={openActivities}>Dars tanlash <ArrowDown size={17}/></button>
+                  <button className="cover-link" onClick={openClassroom}>3D ustoz bilan dars →</button></div>
+                </div>
+              </World3D>
+            </Suspense>
 
             <section className="academy-section" ref={activitiesSection} tabIndex={-1} aria-labelledby="activity-title">
               <div className="section-head">
