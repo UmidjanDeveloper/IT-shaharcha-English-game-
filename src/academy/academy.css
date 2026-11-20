@@ -584,25 +584,28 @@
 .academy progress, .academy meter { accent-color: var(--accent); }
 
 /* ===== 3D world (home), 3D classroom ===== */
-.world3d { position: relative; min-height: clamp(560px, 78vh, 760px); border-radius: 26px; overflow: hidden; isolation: isolate; background: radial-gradient(ellipse at 50% 30%, #3b1f7a, #0b0726 70%); color: #fff; }
-.world3d canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; display: block; touch-action: pan-y; }
-.world3d.world-failed { background: linear-gradient(90deg,#112c2c 3%,#142f30ee 25%,#12252680 55%,transparent 79%), url('./club-classroom.webp') center 42% / cover; }
-.world-copy { position: relative; z-index: 1; max-width: 520px; padding: clamp(22px, 4vw, 52px); pointer-events: none; }
+.world3d { position: relative; min-height: clamp(580px, 80vh, 780px); border-radius: 28px; overflow: hidden; isolation: isolate; background: radial-gradient(ellipse at 65% 40%, #13224a, #070b18 70%); color: #fff; box-shadow: 0 30px 80px -30px rgb(7 11 24 / .8); }
+.world3d canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; display: block; touch-action: pan-y; opacity: 0; transition: opacity 1.2s ease; }
+.world3d.world-ready canvas { opacity: 1; }
+.world3d.world-failed { background: linear-gradient(90deg,#070b18 10%,#070b18cc 40%,transparent 80%), url('./club-classroom.webp') center 42% / cover; }
+.world-copy { position: relative; z-index: 1; max-width: 500px; padding: clamp(26px, 4.5vw, 64px); pointer-events: none; }
 .world-copy > * { pointer-events: auto; }
-.world-copy > span { font-weight: 800; font-size: 11px; letter-spacing: .18em; color: #9ffff0; text-shadow: 0 0 18px #5ff2dc; }
-.world-copy h1 { font-size: clamp(38px, 5vw, 70px); font-weight: 880; letter-spacing: -.06em; line-height: 1; margin: 12px 0; text-shadow: 0 6px 40px rgb(10 5 40 / .8); background: linear-gradient(180deg, #fff 30%, #c9b8ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.world-copy p { max-width: 38ch; line-height: 1.55; color: #e7defc; text-shadow: 0 2px 16px rgb(10 5 40 / .9); }
-.world-copy > div { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 18px; }
-.world-copy .primary-button { background: var(--lime); color: #1d2610; box-shadow: 0 0 30px rgb(224 250 136 / .45); }
-.world-copy .cover-link { color: #9ffff0; font-weight: 800; }
-.world-hint { position: absolute; z-index: 1; left: 50%; bottom: 18px; translate: -50% 0; padding: 9px 16px; border-radius: 99px; background: rgb(20 12 40 / .7); border: 1px solid rgb(159 255 240 / .5); color: #dffff8; font-size: 13px; font-weight: 750; backdrop-filter: blur(8px); white-space: nowrap; pointer-events: none; }
+.world-copy > span { font-weight: 700; font-size: 11px; letter-spacing: .24em; color: #8ff8ea; }
+.world-copy h1 { font-size: clamp(40px, 5.2vw, 74px); font-weight: 800; letter-spacing: -.05em; line-height: .98; margin: 16px 0 14px; color: #fff; }
+.world-copy p { max-width: 40ch; line-height: 1.6; color: #b9c3dd; font-size: 15px; }
+.world-copy > div { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 24px; }
+.world-primary, .world-ghost { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: 14px; font-weight: 750; font-size: 15px; transition: transform .2s, background .2s; }
+.world-primary { background: #fff; color: #0b1224; }
+.world-primary:hover { transform: translateY(-2px); background: #e9fffb; }
+.world-ghost { color: #fff; border: 1px solid rgb(255 255 255 / .28); background: rgb(255 255 255 / .06); backdrop-filter: blur(8px); }
+.world-ghost:hover { background: rgb(255 255 255 / .14); }
+.world-hint { position: absolute; z-index: 1; right: 22px; bottom: 20px; padding: 8px 14px; border-radius: 99px; background: rgb(10 16 34 / .7); border: 1px solid rgb(143 248 234 / .3); color: #d9fff9; font-size: 12px; font-weight: 650; letter-spacing: .02em; backdrop-filter: blur(8px); white-space: nowrap; pointer-events: none; }
 @media (max-width: 700px) {
-  .world3d { min-height: 680px; display: flex; flex-direction: column; justify-content: flex-end; }
-  .world-copy { padding: 18px; background: linear-gradient(0deg, rgb(11 7 38 / .95) 55%, transparent); max-width: none; padding-top: 50px; }
-  .world-copy h1 { font-size: 32px; margin: 8px 0; }
+  .world3d { min-height: 700px; display: flex; flex-direction: column; justify-content: flex-end; }
+  .world-copy { padding: 22px; background: linear-gradient(0deg, rgb(7 11 24 / .96) 62%, transparent); max-width: none; padding-top: 70px; }
+  .world-copy h1 { font-size: 34px; }
   .world-copy p { display: none; }
-  .world-copy > div { margin-top: 10px; }
-  .world-hint { top: 14px; bottom: auto; }
+  .world-hint { top: 16px; bottom: auto; right: 50%; translate: 50% 0; }
 }
 .academy-main:has(.exam-room, .exam-report, .writing-task, .grammar-game) .world3d { display: none; }
 
@@ -627,3 +630,11 @@
 @media (max-width: 545px) { .academy-tools .board-button, .academy-tools .xp-pill { padding-inline: 9px; } .academy-tools { gap: 4px; } .academy-top { gap: 5px 6px; } }
 @media (max-width: 400px) { .academy-tools .board-button:not(.lock-button) { display: none; } } /* board mode is for classroom screens */
 @media (max-width: 340px) { .academy-brand small { display: none; } .academy-tools .lock-button.is-locked .lock-short { display: none; } }
+
+/* Teacher portrait cards: dark studio instead of pastel. */
+.coach-stage { color: #dfe8ff; background: radial-gradient(ellipse at 50% 30%, #1d2f5c, #0a1226 75%); }
+.ielts-hero .coach-stage { background: radial-gradient(ellipse at 50% 30%, #24407a, #0a1226 80%); }
+.ustoz-avatar { background: radial-gradient(ellipse at 50% 30%, #24407a, #0a1226 80%); }
+.ielts-hero { background: linear-gradient(135deg, #0b1430, #1b1f4d 60%, #0e2b3a); }
+.ustoz-panel header { background: linear-gradient(135deg, #0b1430, #1b2a5a); }
+.ustoz-fab { background: #0b1430; color: #8ff8ea; }

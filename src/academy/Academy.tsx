@@ -201,11 +201,11 @@ export default function Academy() {
                 else if (section === 'speaking') { if (level === 'ielts') official(); else openExercise('speaking'); }
                 else openClassroom();
               }}>
-                <div className="world-copy"><span>IT SHAHARCHA · 3D ENGLISH WORLD</span>
-                  <h1>Ingliz tilini<br/>3D dunyoda o‘rganing</h1>
-                  <p>Binolarni bosing: grammatika minorasi, IELTS markazi, Speaking studiyasi va o‘yinlar. Ustoz bilan o‘zbekcha yoki inglizcha gaplashing.</p>
-                  <div><button className="primary-button" onClick={openActivities}>Dars tanlash <ArrowDown size={17}/></button>
-                  <button className="cover-link" onClick={openClassroom}>3D ustoz bilan dars →</button></div>
+                <div className="world-copy"><span>IT SHAHARCHA · ENGLISH ACADEMY</span>
+                  <h1>Ingliz tili —<br/>yangi darajada</h1>
+                  <p>Motion-capture bilan harakatlanadigan 3D ustoz, haqiqiy IELTS formati va A1 dan C1 gacha kurs. Panelni tanlang yoki ustozga savol bering.</p>
+                  <div><button className="world-primary" onClick={openActivities}>Darsni boshlash <ArrowDown size={17}/></button>
+                  <button className="world-ghost" onClick={openClassroom}>Ustoz bilan gaplashish</button></div>
                 </div>
               </World3D>
             </Suspense>

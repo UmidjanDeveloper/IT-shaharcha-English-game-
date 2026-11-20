@@ -11,6 +11,7 @@ import { voiceEnergy } from './ai';
 import { createCoach, pointer, qualityGuard } from './three/coach';
 import type { Coach } from './three/coach';
 import { hologram } from './three/labels';
+import { lightWall, studioFloor } from './three/studio';
 
 export default function Classroom3D({ title, text, pose, children }: { title: string; text: string; pose: string; children?: React.ReactNode }) {
   const host = useRef<HTMLDivElement>(null);
@@ -33,22 +34,21 @@ export default function Classroom3D({ title, text, pose, children }: { title: st
     renderer.domElement.setAttribute('aria-hidden', 'true');
     el.prepend(renderer.domElement);
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b0820);
-    scene.fog = new THREE.Fog(0x0b0820, 6, 16);
+    scene.background = new THREE.Color(0x070b18);
+    scene.fog = new THREE.Fog(0x0a1226, 7, 18);
     const pmrem = new THREE.PMREMGenerator(renderer);
     const environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
     scene.environment = environment; scene.environmentIntensity = .4;
     const camera = new THREE.PerspectiveCamera(38, 1, .05, 50);
 
-    scene.add(new THREE.HemisphereLight(0xb9a6ff, 0x101a2a, 1));
-    const key = new THREE.SpotLight(0xffe2c0, 30, 12, .55, .6); key.position.set(-1, 4.5, 3); key.castShadow = true; key.shadow.mapSize.set(1024, 1024); scene.add(key, key.target);
-    const rim = new THREE.DirectionalLight(0x62f0ff, 3); rim.position.set(-3, 3, -3); scene.add(rim);
+    scene.add(new THREE.HemisphereLight(0xc9d4ff, 0x1a2440, 1.1));
+    const key = new THREE.SpotLight(0xfff1de, 8, 12, .55, .6); key.position.set(-1, 4.5, 3); key.castShadow = true; key.shadow.mapSize.set(1024, 1024); scene.add(key, key.target);
+    const rim = new THREE.DirectionalLight(0x62f0ff, 1.2); rim.position.set(-3, 3, -3); scene.add(rim);
     const boardLight = new THREE.PointLight(0x5ff2dc, 6, 5); scene.add(boardLight);
 
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(9, 64), new THREE.MeshStandardMaterial({ color: 0x14102a, roughness: .25, metalness: .6 }));
-    floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
-    const grid = new THREE.GridHelper(18, 36, 0x5ff2dc, 0x3b2a7a); (grid.material as THREE.Material).transparent = true; (grid.material as THREE.Material).opacity = .35; grid.position.y = .002; scene.add(grid);
-    const ring = new THREE.Mesh(new THREE.RingGeometry(.45, .52, 64), new THREE.MeshBasicMaterial({ color: 0x5ff2dc, side: THREE.DoubleSide, toneMapped: false }));
+    scene.add(studioFloor(9, 11));
+    const { wall, material: wallMaterial } = lightWall(7.5, 6); scene.add(wall);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(.5, .515, 96), new THREE.MeshBasicMaterial({ color: 0x5ff2dc, side: THREE.DoubleSide, toneMapped: false }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = .01; scene.add(ring);
     const placeRing = () => { if (coach) ring.position.set(coach.root.position.x, .01, coach.root.position.z); };
 
@@ -64,7 +64,7 @@ export default function Classroom3D({ title, text, pose, children }: { title: st
 
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), .4, .45, .88);
+    const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), .3, .5, .96);
     composer.addPass(bloom); composer.addPass(new OutputPass());
     let useBloom = true;
     const guard = qualityGuard(() => { useBloom = false; renderer.setPixelRatio(1); });
@@ -110,6 +110,7 @@ export default function Classroom3D({ title, text, pose, children }: { title: st
       const writing = s.typed < s.text.length;
       ring.scale.setScalar(1 + energy * .4 + Math.sin(t * 2) * .03);
       dust.rotation.y = t * .03;
+      wallMaterial.uniforms.time.value = t; wallMaterial.uniforms.energy.value = energy;
       camera.lookAt(portrait ? 0 : .15, portrait ? 1.7 : 1.2, 0);
       if (coach) {
         look.set(portrait ? 0 : THREE.MathUtils.clamp(pointer.x * .8 + .2, -1, 1), THREE.MathUtils.clamp(pointer.y * .6, -1, 1));

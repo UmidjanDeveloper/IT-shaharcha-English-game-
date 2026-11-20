@@ -1,10 +1,12 @@
-Geno character mesh and motion from AI4AnimationPy, Meta Platforms, Inc. and affiliates.
-Source revision: 0feae690aebd0a4cb47a084577a50a937dd7edd1
-https://github.com/facebookresearch/ai4animationpy/tree/0feae690aebd0a4cb47a084577a50a937dd7edd1/Demos/_ASSETS_/Geno
-Inputs: Model.glb and Motions/ground1_subject1.npz.
-Adaptation: three two-second excerpts sampled at 20 Hz, converted from global joint rotations to local skeletal animation, with new lighting and materials.
-CC BY-NC 4.0: https://creativecommons.org/licenses/by-nc/4.0/
-Motion adapted from AI4AnimationPy, Paul Starke and Sebastian Starke, Meta Platforms, Inc. and affiliates.
-Source: https://github.com/facebookresearch/ai4animationpy/blob/0feae690aebd0a4cb47a084577a50a937dd7edd1/Demos/MotionImport/GLB/cranberry.glb
-License: CC BY-NC 4.0, https://creativecommons.org/licenses/by-nc/4.0/
-Changes: selected joints sampled at 12 Hz for four seconds, pelvis-relative coordinates, procedural robot geometry.
+3D teacher model
+  "VRM1_Constraint_Twist_Sample" by pixiv Inc. (c) 2022 pixiv Inc.
+  Source: https://github.com/vrm-c/vrm-specification/tree/master/samples/VRM1_Constraint_Twist_Sample
+  License: VRM Public License 1.0 (https://vrm.dev/licenses/1.0/) — avatar use by everyone, redistribution
+  and modification allowed. Change: textures re-encoded to JPEG and downscaled for the web.
+
+Teacher motion
+  Motion capture from AI4AnimationPy, Paul Starke and Sebastian Starke, Meta Platforms, Inc. and affiliates.
+  Source: https://github.com/facebookresearch/ai4animationpy — Demos/_ASSETS_/Cranberry/Motions/Sh06_cranberry_S01.standing_S01.trk.npz
+  License: CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/) — non-commercial use.
+  Changes: three excerpts (idle, explaining, listening) resampled to 30 fps, slow body turning removed,
+  loops blended, retargeted to the VRM humanoid; blinking, lip-sync, gaze and gestures added in code.

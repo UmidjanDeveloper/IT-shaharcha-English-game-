@@ -44,13 +44,14 @@ chrome --kiosk --app=https://sizning-saytingiz.uz
 
 Windows’da: Settings → Accounts → Other users → *Set up a kiosk (Assigned access)*.
 
-## 3D dunyo va 3D ustoz
+## 3D ustoz va 3D studiya
 
-- **Bosh sahifa — 3D English City:** suzib yuruvchi orol, markazda ustoz, atrofida bosiladigan binolar (kitoblardan qurilgan grammatika minorasi, Registon uslubidagi IELTS peshtoqi, Speaking mikrofoni, harfli kublar o‘yinxonasi), uchib yuruvchi inglizcha so‘zlar, yulduzlar va yorug‘lik effekti. Binoni bossangiz, kamera unga uchib boradi va bo‘lim ochiladi.
-- **Ustoz:** sichqoncha tomonga qaraydi, salom berib qo‘l silkitadi, gapirganda ovoz balandligiga qarab bosh irg‘aydi va qo‘l harakat qiladi, visori ovoz bilan birga yonadi.
-- **3D sinf:** “3D ustoz bilan dars” tugmasi yoki ustoz oynasidagi ⤢ tugmasi. Ustoz gologramma doska yonida turadi, javob doskaga yozilib boradi va ustoz unga qo‘li bilan ishora qiladi. Proyektor yoki doskada ko‘rsatish uchun qulay.
-- Kuchsiz kompyuterlarda sayt o‘zi effektlarni kamaytiradi, ko‘rinmay turgan 3D oynalar esa to‘xtatib qo‘yiladi.
+- **Ustoz:** VRM avatar (pixiv VRoid namunasi). Tanasi [AI4AnimationPy](https://github.com/facebookresearch/ai4animationpy) dagi haqiqiy motion-capture yozuvi (Cranberry, `standing_S01`) bilan harakatlanadi: kutish, tushuntirish va tinglash holatlari VRM skeletiga ko‘chirilgan (`src/academy/three/coach.ts`). Ustiga: ko‘z qisish, ovozga mos lab harakati, sichqonchani kuzatuvchi ko‘zlar va bosh, soch fizikasi, qo‘l silkitish va doskaga ishora.
+- **Bosh sahifa:** to‘q studiya, girih naqshli pol, yorug‘lik devori, ustoz projektor nurida, bo‘limlar shisha panellarda. Panelni bossangiz kamera unga uchib boradi.
+- **3D sinf:** ustoz gologramma doska yonida, javob doskaga yoziladi.
+- Fayllar: `public/teacher/teacher.vrm` (4.7 MB) va `public/teacher/motions.*` (270 KB), bir kun keshlanadi. Kuchsiz kompyuterlarda effektlar avtomatik kamayadi.
 
-## 3D ustoz
+## Litsenziyalar
 
-Geno modeli va harakatlari [AI4AnimationPy](https://github.com/facebookresearch/ai4animationpy) (Meta) loyihasidan, CC BY-NC 4.0 litsenziyasi — faqat notijorat foydalanish. Ustoz gapirganda bosh va qo‘l harakatlari ovoz balandligiga moslashadi.
+- Ustoz modeli: “VRM1_Constraint_Twist_Sample”, © 2022 pixiv Inc., VRM Public License 1.0.
+- Harakatlar: AI4AnimationPy (Meta), CC BY-NC 4.0 — faqat notijorat foydalanish. Batafsil: `public/mentor/CREDITS.txt`.

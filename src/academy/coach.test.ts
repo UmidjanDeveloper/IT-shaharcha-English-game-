@@ -2,36 +2,48 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import fs from 'node:fs';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-// Load the real Geno model from disk instead of over HTTP.
-(GLTFLoader.prototype as unknown as { loadAsync: () => Promise<unknown> }).loadAsync = function (this: GLTFLoader) {
-  const buf = fs.readFileSync('public/mentor/geno.glb');
-  return new Promise((resolve, reject) => this.parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer, '', resolve, reject));
-};
+// Minimal browser stand-ins so GLTFLoader can decode texture placeholders in Node.
+const g = globalThis as Record<string, unknown>;
+g.self ??= globalThis;
+g.createImageBitmap ??= async () => ({ width: 1, height: 1, close() {} });
 
-test('3D teacher waves, presents to the board and does not drift when looking around', async () => {
-  const { createCoach } = await import('./three/coach');
+const file = (p: string) => { const b = fs.readFileSync(p); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer; };
+
+test('VRM teacher moves with the AI4AnimationPy capture, waves, presents and stays facing the class', async () => {
+  const quiet = console.error; console.error = () => {};      // textures cannot decode in Node; geometry is what we test
+  const { createCoach, provideTeacherFiles } = await import('./three/coach');
+  provideTeacherFiles(file('public/teacher/teacher.vrm'), JSON.parse(fs.readFileSync('public/teacher/motions.json', 'utf8')), file('public/teacher/motions.bin'));
   const coach = await createCoach();
-  const hand = coach.root.getObjectByName('RightHand')!, left = coach.root.getObjectByName('LeftHand')!, head = coach.root.getObjectByName('Head')!;
-  const at = (o: THREE.Object3D) => { coach.root.updateMatrixWorld(true); return o.getWorldPosition(new THREE.Vector3()); };
-  const state = { pose: 'idle', energy: 0, look: new THREE.Vector2() };
-  coach.update(.016, 1, state);
-  const rest = at(hand).y;
+  console.error = quiet;
+  const bone = (name: Parameters<typeof coach.vrm.humanoid.getNormalizedBoneNode>[0]) => coach.vrm.humanoid.getNormalizedBoneNode(name)!;
+  const at = (name: Parameters<typeof bone>[0]) => { coach.root.updateMatrixWorld(true); return bone(name).getWorldPosition(new THREE.Vector3()); };
+  const run = (from: number, seconds: number, state: Partial<Parameters<typeof coach.update>[2]> = {}) => {
+    for (let t = 0; t < seconds; t += 1 / 30) coach.update(1 / 30, from + t, { pose: 'idle', energy: 0, look: new THREE.Vector2(), ...state });
+  };
+
+  run(0, 3);
+  const hips = at('hips'), hand = at('rightHand'), left = at('leftHand');
+  assert.ok(hand.y < hips.y + .05 && left.y < hips.y + .05, 'idle: arms hang down');
+  assert.ok(hand.x < 0 && left.x > 0, 'idle: right hand on the right, left hand on the left');
+
+  run(3, 4, { energy: .7 });                                     // speaking → explaining take
+  const chest = at('upperChest');
+  assert.ok(at('rightHand').y > hips.y + .05 || at('leftHand').y > hips.y + .05, 'explaining: hands come up');
+  const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(bone('hips').getWorldQuaternion(new THREE.Quaternion()));
+  assert.ok(forward.z > .7, 'explaining: still facing the class');
+  assert.ok(at('rightHand').z > chest.z - .1, 'explaining: hands are in front, not behind');
+
   coach.wave(2);
-  for (let i = 1; i <= 40; i++) coach.update(.016, 1 + i * .02, state);
-  assert.ok(at(hand).y > rest + .5, 'hand is raised while waving');
-  for (let i = 1; i <= 120; i++) coach.update(.016, 3 + i * .02, state);
-  assert.ok(Math.abs(at(hand).y - rest) < .15, 'hand comes back down');
+  run(7, .8);
+  assert.ok(at('rightHand').y > at('head').y - .1, 'wave: hand raised to head height');
 
-  const leftRest = at(left).x;
-  for (let i = 1; i <= 120; i++) coach.update(.016, 6 + i * .02, { ...state, present: 1 });
-  assert.ok(at(left).x > leftRest + .2, 'left hand opens towards the board');
+  run(9, 3, { present: 1 });
+  assert.ok(at('leftHand').x > at('leftShoulder').x + .2, 'present: left hand opens towards the board');
 
-  // Looking to the side for many frames must stay a bounded turn (no accumulation).
   const look = new THREE.Vector2(1, 0);
-  for (let i = 1; i <= 300; i++) coach.update(.016, 9 + i * .02, { ...state, look });
-  const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()));
-  assert.ok(forward.z > .5, 'head still faces mostly forward');
+  run(12, 8, { look });
+  const face = new THREE.Vector3(0, 0, 1).applyQuaternion(bone('head').getWorldQuaternion(new THREE.Quaternion()));
+  assert.ok(face.z > .5, 'looking around never turns the head away');
   coach.dispose();
 });

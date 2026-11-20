@@ -4,7 +4,22 @@
   "installCommand": "npm install",
   "framework": "vite",
   "functions": {
-    "api/tutor.js": { "maxDuration": 120 },
-    "api/transcribe.js": { "maxDuration": 60 }
-  }
+    "api/tutor.js": {
+      "maxDuration": 120
+    },
+    "api/transcribe.js": {
+      "maxDuration": 60
+    }
+  },
+  "headers": [
+    {
+      "source": "/teacher/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    }
+  ]
 }

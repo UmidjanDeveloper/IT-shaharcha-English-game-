@@ -49,13 +49,15 @@ export default function Mentor({ pose, energy = voiceEnergy, wave = true }: { po
       if (inactive) { c.dispose(); return; }
       coach = c; scene.add(c.root);
       const h = c.height;
-      camera.position.set(h * .08, h * .8, h * 1.15);
-      camera.lookAt(0, h * .7, 0);
+      // Waist-up portrait, like a video call with the teacher.
+      camera.position.set(0, h * .8, h * 1.35);
+      camera.lookAt(0, h * .74, 0);
       if (wave) c.wave(2.4);
     }).catch(() => { if (!inactive) setFailed(true); });
 
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-    const look = new THREE.Vector2();
+    const look = new THREE.Vector2(), hips = new THREE.Vector3();
+    let follow = 0;
     let last = performance.now();
     renderer.setAnimationLoop(now => {
       const dt = Math.min(.08, Math.max(0, now - last) / 1000); last = now;
@@ -67,8 +69,12 @@ export default function Mentor({ pose, energy = voiceEnergy, wave = true }: { po
         // Look at the pointer relative to this view.
         const box = el.getBoundingClientRect();
         const cx = ((box.left + box.width / 2) / innerWidth) * 2 - 1, cy = -(((box.top + box.height * .3) / innerHeight) * 2 - 1);
-        look.set(THREE.MathUtils.clamp((pointer.x - cx) * 1.2, -1, 1), THREE.MathUtils.clamp((pointer.y - cy) * 1.2, -1, 1));
+        look.set(THREE.MathUtils.clamp((pointer.x - cx) * .6, -.6, .6), THREE.MathUtils.clamp((pointer.y - cy) * .6, -.5, .5));
         coach.update(reduced.matches ? 0 : dt, now / 1000, { pose: current.current, energy: level, look });
+        // Keep the teacher centred while the captured body sways.
+        coach.vrm.humanoid.getNormalizedBoneNode('neck')!.getWorldPosition(hips);
+        follow += (hips.x - follow) * Math.min(1, dt * 2);
+        camera.position.x = follow; camera.lookAt(follow, coach.height * .74, 0);
       }
       renderer.render(scene, camera);
     });
