@@ -1,14 +1,16 @@
-3D teacher
-  instructor.glb — the club's instructor, a custom character based on the owner's own photo (provided by
-  the owner for this purpose). Face depth was fitted with the MediaPipe canonical face reference
-  (Google, Apache License 2.0), license copy: /teacher/mediapipe-license.txt.
-  In the browser, paper-thin triangles at the limb ends are removed at load so they cannot stretch into lines.
+3D teacher model
+  "VRM1_Constraint_Twist_Sample" by pixiv Inc. (c) 2022 pixiv Inc.
+  Source: https://github.com/vrm-c/vrm-specification/tree/master/samples/VRM1_Constraint_Twist_Sample
+  License: VRM Public License 1.0 (https://vrm.dev/licenses/1.0/) — avatar use by everyone, redistribution
+  and modification allowed. Changes: textures re-encoded to JPEG and downscaled for the web; leg skin
+  repainted in the shorts' fabric colour so the teacher wears ankle-length trousers.
 
 Teacher motion
   Motion capture from AI4AnimationPy, Paul Starke and Sebastian Starke, Meta Platforms, Inc. and affiliates.
-  Source: https://github.com/facebookresearch/ai4animationpy — Cranberry Sh06 standing_S01 capture.
+  Source: https://github.com/facebookresearch/ai4animationpy — Demos/_ASSETS_/Cranberry/Motions/Sh06_cranberry_S01.standing_S01.trk.npz
   License: CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/) — non-commercial use.
-  Idle, explaining and listening takes; blinking, lip movement, gaze, waving and presenting added in code.
+  Changes: three excerpts (idle, explaining, listening) resampled to 30 fps, slow body turning removed,
+  loops blended, retargeted to the VRM humanoid; blinking, lip-sync, gaze and gestures added in code.
 
 Interface animations
   BlurText, RotatingText, ShinyText, CountUp and Magnet from React Bits by David Haz

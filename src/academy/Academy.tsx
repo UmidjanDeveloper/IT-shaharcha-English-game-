@@ -17,7 +17,7 @@ import type { LaunchGame } from './Library';
 import type { GameType } from '../types';
 import { Workshop, workshops } from './Workshop';
 import './academy.css';
-import { MotionConfig } from 'motion/react';
+import { MotionConfig, motion } from 'motion/react';
 import BlurText from '../vendor/react-bits/BlurText';
 import RotatingText from '../vendor/react-bits/RotatingText';
 import ShinyText from '../vendor/react-bits/ShinyText';
@@ -166,6 +166,7 @@ export default function Academy() {
       </header>
 
       <main className={`academy-main ${screen === 'legacy' ? 'academy-legacy' : ''}`} ref={main} tabIndex={-1}>
+        <motion.div key={`${screen}-${activity ?? ''}-${launched?.id ?? ''}`} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35, ease: 'easeOut' }}>
         {screen === 'grammar' && <Suspense fallback="Grammatika yuklanmoqda…"><GrammarCourse key={grammarLevel} startLevel={grammarLevel} onAskTeacher={askTeacher} onExit={() => navigate('home')} /></Suspense>}
         {screen === 'legacy' && launched?.id.startsWith('grammar-') && <Suspense fallback="O‘yin yuklanmoqda…"><GrammarGame id={launched.id as GrammarGameId} level={startingBook(level)} onExit={showLibrary} /></Suspense>}
         {screen === 'legacy' && launched && !launched.id.startsWith('grammar-') && (workshop ?
@@ -264,6 +265,7 @@ export default function Academy() {
         {screen === 'home' && activity && activity !== 'mock' && activity !== 'arena' && activity !== 'sprint' && activity !== 'speaking' && (
           <Practice key={`${level}-${activity}-${dailyRound}`} level={level} activity={activity} dailyRound={dailyRound} onExit={openActivities} award={award} />
         )}
+        </motion.div>
       </main>
 
       <AiTeacher level={level} />

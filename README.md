@@ -50,7 +50,7 @@ Windows’da: Settings → Accounts → Other users → *Set up a kiosk (Assigne
 
 ## 3D ustoz va 3D studiya
 
-- **Ustoz:** klub instruktori (`public/teacher/instructor.glb`, egasining rasmi asosida). Tanasi [AI4AnimationPy](https://github.com/facebookresearch/ai4animationpy) dagi motion-capture bilan harakatlanadi (kutish, tushuntirish, tinglash). Ustiga: ko‘z qisish, ovozga mos lab harakati, tomoshabinga qarash, qo‘l silkitish va doskaga ishora (`src/academy/three/coach.ts`).
+- **Ustoz:** VRM avatar (pixiv VRoid namunasi, `public/teacher/teacher.vrm`, kiyimi uzaytirilgan — to‘piqqacha shim). Tanasi [AI4AnimationPy](https://github.com/facebookresearch/ai4animationpy) dagi motion-capture bilan harakatlanadi (kutish, tushuntirish, tinglash). Ustiga: ko‘z qisish, ovozga mos lab harakati (VRM visemalari), ko‘zlar va bosh tomoshabinni kuzatadi, soch fizikasi, qo‘l silkitish va doskaga ishora (`src/academy/three/coach.ts`).
 - **Bosh sahifa:** to‘q studiya, girih naqshli pol, yorug‘lik devori, ustoz projektor nurida, bo‘limlar shisha panellarda; panel bosilsa kamera unga uchadi.
 - **3D sinf:** ustoz gologramma doska yonida, javob doskaga yoziladi va ustoz doskaga ishora qiladi.
 - **Animatsiyalar:** React Bits komponentlari (BlurText, RotatingText, ShinyText, CountUp, Magnet — `src/vendor/react-bits`), skrollda chiqib keluvchi bo‘limlar va kursorga qarab qiyshayuvchi kartalar (`src/academy/motion/Reveal.tsx`, 3D portfolio uslubidan ilhomlangan).
@@ -59,6 +59,6 @@ Windows’da: Settings → Accounts → Other users → *Set up a kiosk (Assigne
 ## Litsenziyalar
 
 - Harakatlar: AI4AnimationPy (Meta), CC BY-NC 4.0 — faqat notijorat foydalanish.
-- Ustoz yuzi: MediaPipe canonical face (Apache 2.0).
+- Ustoz modeli: “VRM1_Constraint_Twist_Sample”, © 2022 pixiv Inc., VRM Public License 1.0.
 - Animatsiya komponentlari: React Bits, MIT + Commons Clause.
 - Batafsil: `public/mentor/CREDITS.txt`.

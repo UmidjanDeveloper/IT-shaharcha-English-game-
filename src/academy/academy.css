@@ -694,3 +694,4 @@
 .activity-card { transition: box-shadow .25s; }
 .tilt:hover .activity-card { box-shadow: 0 20px 40px -24px rgb(20 12 40 / .55); }
 @media (prefers-reduced-motion: reduce) { .tilt { transform: none !important; } }
+.hero-rotate { min-height: 1.05em; }
