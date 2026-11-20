@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { voiceEnergy } from './ai';
 
 function dispose(root: THREE.Object3D) {
   root.traverse(child => {
@@ -53,11 +54,13 @@ function dressCoach(scene: THREE.Object3D) {
   head.attach(headset);
 }
 
-export default function Mentor({ pose }: { pose: string }) {
+export default function Mentor({ pose, energy = voiceEnergy }: { pose: string; energy?: () => number }) {
   const host = useRef<HTMLDivElement>(null);
   const current = useRef(pose);
+  const loudness = useRef(energy);
   const [failed, setFailed] = useState(false);
   useEffect(() => { current.current = pose; }, [pose]);
+  useEffect(() => { loudness.current = energy; }, [energy]);
   useEffect(() => {
     const el = host.current!;
     let renderer: THREE.WebGLRenderer;
@@ -93,13 +96,28 @@ export default function Mentor({ pose }: { pose: string }) {
       camera.lookAt(0,height*.72,0);
     },undefined,()=>{ if (!inactive) setFailed(true); });
     let last=performance.now();
+    let smooth=0;
     const reduced=matchMedia('(prefers-reduced-motion: reduce)');
     renderer.setAnimationLoop(now=>{
-      const next=actions[current.current] ?? actions.idle;
+      // While the teacher's voice plays, the "talking" motion is used and the head and arms follow its loudness.
+      const level=loudness.current();
+      const wanted=level>0.02 ? 'talking' : current.current;
+      const next=actions[wanted] ?? actions.idle;
       if (next && active!==next) {
         active?.fadeOut(.25); next.reset().fadeIn(.25).play(); active=next;
       }
       mixer?.update(reduced.matches ? 0 : Math.min(.08,Math.max(0,now-last)/1000));
+      smooth+= (level-smooth)*.25;
+      if (!reduced.matches && smooth>.01) {
+        const t=now/1000;
+        const head=scene.getObjectByName('Head'), neck=scene.getObjectByName('Neck1');
+        const arm=scene.getObjectByName('RightForeArm'), spine=scene.getObjectByName('Spine2');
+        if (head) { head.rotation.x+=Math.sin(t*8.5)*.07*smooth; head.rotation.y+=Math.sin(t*2.1)*.06*smooth; }
+        if (neck) neck.rotation.z+=Math.sin(t*1.7)*.03*smooth;
+        if (arm) arm.rotation.z+=Math.sin(t*3.2)*.16*smooth;
+        if (spine) spine.rotation.y+=Math.sin(t*1.3)*.04*smooth;
+      }
+      if (current.current==='listening' || current.current==='attentive') { const head=scene.getObjectByName('Head'); if (head) head.rotation.z+=.09; }
       last=now;renderer.render(scene,camera);
     });
     return ()=>{inactive=true;observer.disconnect();renderer.setAnimationLoop(null);mixer?.stopAllAction();dispose(scene);renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};

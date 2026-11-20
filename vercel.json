@@ -2,5 +2,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
-  "framework": "vite"
+  "framework": "vite",
+  "functions": {
+    "api/tutor.js": { "maxDuration": 120 },
+    "api/transcribe.js": { "maxDuration": 60 }
+  }
 }
