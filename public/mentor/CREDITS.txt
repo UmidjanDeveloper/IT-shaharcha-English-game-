@@ -10,3 +10,5 @@ Teacher motion
   License: CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/) — non-commercial use.
   Changes: three excerpts (idle, explaining, listening) resampled to 30 fps, slow body turning removed,
   loops blended, retargeted to the VRM humanoid; blinking, lip-sync, gaze and gestures added in code.
+
+Portrait studio: generated likeness based on the supplied portrait, with a custom frontal depth mesh and weighted head/torso rig. The studio uses the Cranberry idle, explaining and listening captures credited above. The room image is projected onto a depth surface.

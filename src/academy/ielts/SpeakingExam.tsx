@@ -54,7 +54,7 @@ export function buildSteps(plan: ExamPlan): Step[] {
   ];
   if (plan.mode === 'full') {
     const test = buildSpeakingTest();
-    steps.push({ part: 'Intro', topic: 'Introduction', question: 'Can you tell me your full name, please?', say: "Good afternoon. My name is Geno, and I'll be your examiner today. This test is recorded. Can you tell me your full name, please?", limit: 12, silence: 2 });
+    steps.push({ part: 'Intro', topic: 'Introduction', question: 'Can you tell me your full name, please?', say: "Good afternoon. I'll be your speaking examiner today. This test is recorded. Can you tell me your full name, please?", limit: 12, silence: 2 });
     steps.push({ part: 'Part 1', topic: test.opening.topic, question: test.opening.questions[0], say: "Thank you. Now, in this first part, I'd like to ask you some questions about yourself. " + test.opening.questions[0], limit: 40, silence: 3 });
     test.opening.questions.slice(1).forEach(q => steps.push(p1(test.opening.topic, q, false)));
     test.part1.forEach(t => t.questions.forEach((q, i) => steps.push(p1(t.topic, q, i === 0))));

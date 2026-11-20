@@ -201,9 +201,9 @@ export default function Academy() {
                 else if (section === 'speaking') { if (level === 'ielts') official(); else openExercise('speaking'); }
                 else openClassroom();
               }}>
-                <div className="world-copy"><span>IT SHAHARCHA · ENGLISH ACADEMY</span>
-                  <h1>Ingliz tili —<br/>yangi darajada</h1>
-                  <p>Motion-capture bilan harakatlanadigan 3D ustoz, haqiqiy IELTS formati va A1 dan C1 gacha kurs. Panelni tanlang yoki ustozga savol bering.</p>
+                <div className="atelier-copy"><span>IT SHAHARCHA &nbsp; / &nbsp; XATIRCHI</span>
+                  <h1>Ingliz tili<br/><em>ustaxonasi.</em></h1>
+                  <p>Birinchi inglizcha gapingizdan IELTS suhbatigacha. Ustoz bilan gaplashing yoki sinfingiz bilan mashq boshlang.</p>
                   <div><button className="world-primary" onClick={openActivities}>Darsni boshlash <ArrowDown size={17}/></button>
                   <button className="world-ghost" onClick={openClassroom}>Ustoz bilan gaplashish</button></div>
                 </div>
