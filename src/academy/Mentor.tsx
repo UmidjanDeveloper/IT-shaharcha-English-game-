@@ -1,60 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { voiceEnergy } from './ai';
+import { createCoach, pointer } from './three/coach';
+import type { Coach } from './three/coach';
 
-function dispose(root: THREE.Object3D) {
-  root.traverse(child => {
-    if (!(child instanceof THREE.Mesh)) return;
-    child.geometry.dispose();
-    const materials = Array.isArray(child.material) ? child.material : [child.material];
-    materials.forEach(material => material.dispose());
-    if (child instanceof THREE.SkinnedMesh) child.skeleton.dispose();
-  });
-}
-
-// Fit the coach uniform to Geno's bind-pose vertices so it follows the skin.
-function dressCoach(scene: THREE.Object3D) {
-  const color = new THREE.Color();
-  scene.traverse(mesh => {
-    if (!(mesh instanceof THREE.SkinnedMesh)) return;
-    const points = mesh.geometry.getAttribute('position');
-    const colors = [];
-    for (let i = 0; i < points.count; i++) {
-      const y = points.getY(i), x = Math.abs(points.getX(i));
-      let shade = 0x203246;
-      if (y > 1.43 || x > .49) shade = 0xd1e0e3;
-      else if (y > .88) {
-        shade = x > .33 ? 0x167e80 : 0x10555d;
-        if (Math.abs(y - 1.23 - x * .32) < .018 || x < .009) shade = 0xffc66c;
-      }
-      color.setHex(shade);
-      colors.push(color.r, color.g, color.b);
-    }
-    mesh.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    mesh.material.dispose();
-    mesh.material = new THREE.MeshStandardMaterial({vertexColors:true, roughness:.48, metalness:.22});
-    mesh.frustumCulled = false;
-  });
-  const head = scene.getObjectByName('Head');
-  if (!head) return;
-  const headset = new THREE.Group();
-  const oval = (x:number,y:number,z:number,w:number,h:number,d:number,tint:number) => {
-    const part = new THREE.Mesh(new THREE.SphereGeometry(1,32,20),
-      new THREE.MeshStandardMaterial({color:tint, roughness:.32, metalness:.28}));
-    part.position.set(x,y,z); part.scale.set(w,h,d); headset.add(part);
-  };
-  oval(0,1.605,.046,.089,.049,.062,0x102c3a);
-  for (const side of [-1,1]) {
-    oval(side*.034,1.608,.101,.014,.009,.008,0x75ffdc);
-    oval(side*.084,1.59,-.012,.016,.039,.032,0xe9ac53);
-  }
-  scene.add(headset);
-  scene.updateMatrixWorld(true);
-  head.attach(headset);
-}
-
-export default function Mentor({ pose, energy = voiceEnergy }: { pose: string; energy?: () => number }) {
+// Compact 3D teacher used inside cards (IELTS examiner, Speaking Studio, AI teacher panel).
+export default function Mentor({ pose, energy = voiceEnergy, wave = true }: { pose: string; energy?: () => number; wave?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const current = useRef(pose);
   const loudness = useRef(energy);
@@ -68,59 +20,63 @@ export default function Mentor({ pose, energy = voiceEnergy }: { pose: string; e
     catch { setFailed(true); return; }
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.shadowMap.enabled = true;
     el.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(31, 1, 0.01, 30);
-    scene.add(new THREE.HemisphereLight(0xffeed5, 0x537995, 2.2));
-    for (const [x,y,z,color,intensity] of [[2,3,4,0xffe0ba,3],[-2,2,-2,0x77e4ff,4]]) {
-      const light = new THREE.DirectionalLight(color,intensity);
-      light.position.set(x,y,z); scene.add(light);
-    }
-    let inactive = false;
-    let mixer: THREE.AnimationMixer | undefined;
-    let actions: Record<string, THREE.AnimationAction> = {};
-    let active: THREE.AnimationAction | undefined;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
+    scene.environment = environment;
+    scene.environmentIntensity = .55;
+    const camera = new THREE.PerspectiveCamera(30, 1, .01, 30);
+    scene.add(new THREE.HemisphereLight(0xffeed5, 0x3a4f7a, 1.2));
+    const key = new THREE.DirectionalLight(0xffe0ba, 2.6); key.position.set(2, 3, 4); key.castShadow = true; key.shadow.mapSize.set(1024, 1024); scene.add(key);
+    const rim = new THREE.DirectionalLight(0x6ff5ff, 3.5); rim.position.set(-2.5, 2.2, -2.5); scene.add(rim);
+    const rim2 = new THREE.DirectionalLight(0xb48cff, 2.2); rim2.position.set(2.5, 1.5, -2); scene.add(rim2);
+    // Glowing platform ring under the teacher.
+    const ring = new THREE.Mesh(new THREE.RingGeometry(.28, .34, 64), new THREE.MeshBasicMaterial({ color: 0x5ff2dc, transparent: true, opacity: .75, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = .005; scene.add(ring);
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(.5, 48), new THREE.ShadowMaterial({ opacity: .25 }));
+    disc.rotation.x = -Math.PI / 2; disc.receiveShadow = true; scene.add(disc);
+
+    let inactive = false, coach: Coach | undefined, visible = true;
     const resize = () => {
-      const w=Math.max(1,el.clientWidth), h=Math.max(1,el.clientHeight);
-      renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix();
+      const w = Math.max(1, el.clientWidth), h = Math.max(1, el.clientHeight);
+      renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
     };
-    const observer=new ResizeObserver(resize);observer.observe(el);resize();
-    new GLTFLoader().load('/mentor/geno.glb', model => {
-      if (inactive) { dispose(model.scene); return; }
-      scene.add(model.scene);
-      dressCoach(model.scene);
-      mixer=new THREE.AnimationMixer(model.scene);
-      actions=Object.fromEntries(model.animations.map(clip=>[clip.name,mixer!.clipAction(clip)]));
-      const height=new THREE.Box3().setFromObject(model.scene).getSize(new THREE.Vector3()).y;
-      camera.position.set(height*.1,height*.78,height*1.12);
-      camera.lookAt(0,height*.72,0);
-    },undefined,()=>{ if (!inactive) setFailed(true); });
-    let last=performance.now();
-    let smooth=0;
-    const reduced=matchMedia('(prefers-reduced-motion: reduce)');
-    renderer.setAnimationLoop(now=>{
-      // While the teacher's voice plays, the "talking" motion is used and the head and arms follow its loudness.
-      const level=loudness.current();
-      const wanted=level>0.02 ? 'talking' : current.current;
-      const next=actions[wanted] ?? actions.idle;
-      if (next && active!==next) {
-        active?.fadeOut(.25); next.reset().fadeIn(.25).play(); active=next;
+    const observer = new ResizeObserver(resize); observer.observe(el); resize();
+    const seen = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }); seen.observe(el);
+    createCoach().then(c => {
+      if (inactive) { c.dispose(); return; }
+      coach = c; scene.add(c.root);
+      const h = c.height;
+      camera.position.set(h * .08, h * .8, h * 1.15);
+      camera.lookAt(0, h * .7, 0);
+      if (wave) c.wave(2.4);
+    }).catch(() => { if (!inactive) setFailed(true); });
+
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const look = new THREE.Vector2();
+    let last = performance.now();
+    renderer.setAnimationLoop(now => {
+      const dt = Math.min(.08, Math.max(0, now - last) / 1000); last = now;
+      if (!visible || document.hidden) return;
+      const level = loudness.current();
+      ring.scale.setScalar(1 + level * .35 + Math.sin(now / 600) * .03);
+      (ring.material as THREE.MeshBasicMaterial).opacity = .55 + level * .45;
+      if (coach) {
+        // Look at the pointer relative to this view.
+        const box = el.getBoundingClientRect();
+        const cx = ((box.left + box.width / 2) / innerWidth) * 2 - 1, cy = -(((box.top + box.height * .3) / innerHeight) * 2 - 1);
+        look.set(THREE.MathUtils.clamp((pointer.x - cx) * 1.2, -1, 1), THREE.MathUtils.clamp((pointer.y - cy) * 1.2, -1, 1));
+        coach.update(reduced.matches ? 0 : dt, now / 1000, { pose: current.current, energy: level, look });
       }
-      mixer?.update(reduced.matches ? 0 : Math.min(.08,Math.max(0,now-last)/1000));
-      smooth+= (level-smooth)*.25;
-      if (!reduced.matches && smooth>.01) {
-        const t=now/1000;
-        const head=scene.getObjectByName('Head'), neck=scene.getObjectByName('Neck1');
-        const arm=scene.getObjectByName('RightForeArm'), spine=scene.getObjectByName('Spine2');
-        if (head) { head.rotation.x+=Math.sin(t*8.5)*.07*smooth; head.rotation.y+=Math.sin(t*2.1)*.06*smooth; }
-        if (neck) neck.rotation.z+=Math.sin(t*1.7)*.03*smooth;
-        if (arm) arm.rotation.z+=Math.sin(t*3.2)*.16*smooth;
-        if (spine) spine.rotation.y+=Math.sin(t*1.3)*.04*smooth;
-      }
-      if (current.current==='listening' || current.current==='attentive') { const head=scene.getObjectByName('Head'); if (head) head.rotation.z+=.09; }
-      last=now;renderer.render(scene,camera);
+      renderer.render(scene, camera);
     });
-    return ()=>{inactive=true;observer.disconnect();renderer.setAnimationLoop(null);mixer?.stopAllAction();dispose(scene);renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
-  },[]);
-  return <div ref={host} className="mentor-view" role="img" aria-label="Geno — ingliz tili murabbiyi">{failed && <span>Shaharcha ustozi</span>}</div>;
+    return () => {
+      inactive = true; observer.disconnect(); seen.disconnect(); renderer.setAnimationLoop(null);
+      coach?.dispose(); environment.dispose(); pmrem.dispose();
+      renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
+    };
+  }, [wave]);
+  return <div ref={host} className="mentor-view" role="img" aria-label="Geno — ingliz tili ustozi">{failed && <span>Shaharcha ustozi</span>}</div>;
 }

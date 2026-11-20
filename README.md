@@ -44,6 +44,13 @@ chrome --kiosk --app=https://sizning-saytingiz.uz
 
 Windows’da: Settings → Accounts → Other users → *Set up a kiosk (Assigned access)*.
 
+## 3D dunyo va 3D ustoz
+
+- **Bosh sahifa — 3D English City:** suzib yuruvchi orol, markazda ustoz, atrofida bosiladigan binolar (kitoblardan qurilgan grammatika minorasi, Registon uslubidagi IELTS peshtoqi, Speaking mikrofoni, harfli kublar o‘yinxonasi), uchib yuruvchi inglizcha so‘zlar, yulduzlar va yorug‘lik effekti. Binoni bossangiz, kamera unga uchib boradi va bo‘lim ochiladi.
+- **Ustoz:** sichqoncha tomonga qaraydi, salom berib qo‘l silkitadi, gapirganda ovoz balandligiga qarab bosh irg‘aydi va qo‘l harakat qiladi, visori ovoz bilan birga yonadi.
+- **3D sinf:** “3D ustoz bilan dars” tugmasi yoki ustoz oynasidagi ⤢ tugmasi. Ustoz gologramma doska yonida turadi, javob doskaga yozilib boradi va ustoz unga qo‘li bilan ishora qiladi. Proyektor yoki doskada ko‘rsatish uchun qulay.
+- Kuchsiz kompyuterlarda sayt o‘zi effektlarni kamaytiradi, ko‘rinmay turgan 3D oynalar esa to‘xtatib qo‘yiladi.
+
 ## 3D ustoz
 
 Geno modeli va harakatlari [AI4AnimationPy](https://github.com/facebookresearch/ai4animationpy) (Meta) loyihasidan, CC BY-NC 4.0 litsenziyasi — faqat notijorat foydalanish. Ustoz gapirganda bosh va qo‘l harakatlari ovoz balandligiga moslashadi.
