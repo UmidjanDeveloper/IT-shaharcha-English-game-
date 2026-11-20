@@ -1,3 +1,9 @@
+Geno character mesh and motion from AI4AnimationPy, Meta Platforms, Inc. and affiliates.
+Source revision: 0feae690aebd0a4cb47a084577a50a937dd7edd1
+https://github.com/facebookresearch/ai4animationpy/tree/0feae690aebd0a4cb47a084577a50a937dd7edd1/Demos/_ASSETS_/Geno
+Inputs: Model.glb and Motions/ground1_subject1.npz.
+Adaptation: three two-second excerpts sampled at 20 Hz, converted from global joint rotations to local skeletal animation, with new lighting and materials.
+CC BY-NC 4.0: https://creativecommons.org/licenses/by-nc/4.0/
 Motion adapted from AI4AnimationPy, Paul Starke and Sebastian Starke, Meta Platforms, Inc. and affiliates.
 Source: https://github.com/facebookresearch/ai4animationpy/blob/0feae690aebd0a4cb47a084577a50a937dd7edd1/Demos/MotionImport/GLB/cranberry.glb
 License: CC BY-NC 4.0, https://creativecommons.org/licenses/by-nc/4.0/

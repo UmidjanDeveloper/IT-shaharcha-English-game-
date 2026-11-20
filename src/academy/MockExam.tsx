@@ -112,7 +112,7 @@ export function MockExam({ level, onExit, award }: { level: Level; onExit: () =>
       {stage === 1 && <><h2>{reading.title}</h2><p>{reading.passage}</p><fieldset><legend>{reading.question.prompt}</legend>{reading.question.options.map((option,i)=><label key={option}><input type="radio" name="reading" checked={answers[0]===String(i)} onChange={()=>change(0,String(i))}/> {option}</label>)}</fieldset></>}
       {stage === 2 && <><h2>{writing.title}</h2><p>{writing.instruction}</p><p>{writing.prompt}</p><label>Inglizcha javob<textarea rows={7} className="mock-input" maxLength={5000} value={answers[0] ?? ''} onChange={e=>change(0,e.target.value)} /></label><TutorFeedback skill="Writing" prompt={writing.prompt} answer={answers[0] ?? ''} /></>}
       </div></div>}
-    {stage === 3 && <SpeakingRound key={item} prompt={prompt} award={()=>{}} onTranscriptReview={setSpoken} />}
+    {stage === 3 && <SpeakingRound key={item} prompt={prompt} onTranscriptReview={setSpoken} />}
     {stage < 4 ? <button className="primary-button" style={{marginTop:14}} disabled={!ready} onClick={submit}>{stage === 3 && item+1 === itemCount ? 'Natijalarni ko‘rish' : 'Javobni topshirish →'}</button> :
       <div className="practice-card"><h2>Natijalar</h2><ResultDetails results={results} />
       <p className="grading-note">Bu brauzerda oxirgi 10 ta saqlangan sinov ko‘rinadi. Umumiy doskada natijani keyingi o‘quvchi ham ko‘ra oladi.</p>

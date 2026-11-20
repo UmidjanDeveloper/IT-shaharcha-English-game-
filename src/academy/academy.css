@@ -379,3 +379,44 @@
 .mock-breakdown { padding-block: 10px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
 .mock-breakdown h3 { font-size: 18px; color: var(--accent); font-weight: 800; }
 .mock-breakdown li { margin-top: 5px; }
+.club-cover { min-height: 390px; display: flex; align-items: center; isolation: isolate; overflow: hidden; border-radius: 22px; color: white; background: linear-gradient(90deg,#112c2c 3%,#142f30ee 25%,#12252680 55%,transparent 79%),url('./club-classroom.webp') center 42% / cover; }
+.club-cover-copy { padding: clamp(24px,4vw,55px); max-width: 590px; }
+.club-cover-copy > span {font-weight:800;font-size:11px;letter-spacing:.15em;color:#d9edb3}
+.club-cover h1 {font-size:clamp(39px,5vw,72px);font-weight:850;letter-spacing:-.065em;line-height:1.02;margin:12px 0}
+.club-cover p {max-width:36ch;font-size:16px;line-height:1.55;color:#edf3e9}
+.club-cover-copy > div {display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:20px}
+.club-cover .primary-button {background:#ddf59c;color:#182623}
+.cover-link {min-height:44px;color:white;font-weight:740}
+.club-subtitle,.official-hub h2 {font-size:23px;font-weight:800;margin:14px 0 8px}
+.official-lesson,.official-hub {padding:20px;background:#eaf1e5;border-radius:16px;margin-block:16px}
+.official-lesson {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.official-lesson p,.official-hub p {color:#435448;font-size:14px}
+.club-library {padding-top:12px}
+.library-search,.club-tabs,.club-tiles {display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.library-search {border:1px solid #c8d3ca;border-radius:12px;padding:9px;background:white}
+.library-search input {min-width:0;max-width:100%}
+.library-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px;margin-block:15px}
+.library-grid button,.library-grid a {display:grid;align-content:start;text-align:left;gap:5px;background:white;border:1px solid #dcded7;border-radius:14px;padding:15px}
+.library-grid button:hover,.library-grid a:hover {border-color:#4a7656;background:#f3f8ed}
+.library-grid small {color:#545d55;line-height:1.4}
+.club-tabs,.club-tiles {margin-block:9px}
+.club-tabs button,.club-tiles button,.club-match-settings {padding:9px 13px;border-radius:12px;min-height:44px;border:1px solid #cad1c8;background:#fff;color:#22352b}
+.club-tabs button[aria-pressed=true] {background:#214633;color:#fff}
+.club-tiles button:disabled {opacity:.5}
+.club-match-settings {position:relative;z-index:10;align-self:center}
+.academy-legacy .practice {color:var(--ink);padding:16px}
+@media(max-width:750px){.academy-nav{flex-wrap:wrap}.academy-nav button{padding-inline:10px}.club-cover{min-height:325px}.club-cover-copy{max-width:88%}.club-cover{background-position:63% center}.club-cover-copy p{font-size:14px}}
+.official-station{display:grid;grid-template-columns:minmax(180px,1fr) 2fr;gap:22px;align-items:center;margin:14px 0}
+.official-station h3,.club-game-header h1{font-size:clamp(24px,3vw,37px);font-weight:810;letter-spacing:-.04em}
+.official-station .primary-button{margin:12px 12px 0 0}
+.coach-stage{background:radial-gradient(ellipse at 45% 22%,#e3fff3,#97c0b7 65%,#557e80);color:#15443d}
+.mentor-view{height:280px}
+.integrated-game{max-width:1240px;margin:auto;padding:0 16px 24px}
+.club-game-header{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:16px 0;color:var(--ink)}
+.club-game-header p{color:var(--muted)}
+.integrated-game section>div{border-radius:16px;overflow:hidden;color:#f6faf9}
+@media(max-width:600px){.official-station{grid-template-columns:1fr}.mentor-view{height:220px}}
+.path-lesson {align-items:flex-start;flex-direction:column;gap:8px}
+.path-lesson .club-tabs {margin:0}
+.path-links {display:flex;flex-wrap:wrap;gap:8px 16px}
+.path-links a {display:inline-flex;align-items:center;min-height:40px;text-decoration:underline;text-underline-offset:4px;color:#235036;font-weight:750}

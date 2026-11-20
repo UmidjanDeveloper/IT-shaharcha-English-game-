@@ -46,7 +46,7 @@ export function SpeakingStudio({ level, onExit, award }: {
 
 export function SpeakingRound({ prompt, award, onTranscriptReview }: {
   prompt: (typeof speakingPrompts)[Level][number];
-  award: () => void;
+  award?: () => void;
   onTranscriptReview?: (text: string) => void;
 }) {
   const win = window as RecognitionWindow;
@@ -183,7 +183,7 @@ export function SpeakingRound({ prompt, award, onTranscriptReview }: {
     setResult(feedback);
     onTranscriptReview?.(transcript);
     setCoach('review');
-    if (feedback.words >= prompt.goal) award();
+    if (feedback.words >= prompt.goal) award?.();
   }
 
   return (
@@ -243,13 +243,13 @@ export function SpeakingRound({ prompt, award, onTranscriptReview }: {
 
       {result && <section className="practice-card speaking-result">
         <h2 ref={resultHeading} tabIndex={-1}>Speaking tahlili</h2>
-        <p>{result.words} ta so‘z · mashq maqsadi {prompt.goal} ta so‘z {result.words >= prompt.goal && '· 10 XP'}</p>
+        <p>{result.words} ta so‘z · mashq maqsadi {prompt.goal} ta so‘z {award && result.words >= prompt.goal && '· 10 XP'}</p>
         {result.words < prompt.goal && <p>Javobni sabab va aniq misol bilan kengaytirib ko‘ring.</p>}
         {result.fillers > 0 && <p>{result.fillers} ta “um”, “uh” yoki “erm” topildi. O‘rniga qisqa pauza qilib ko‘ring.</p>}
         {result.errors.length > 0 ? <ul className="speaking-errors">{result.errors.map(error => (
           <li key={error.tip}><mark lang="en">{error.phrase}</mark> {error.tip}</li>
         ))}</ul> : <p>Tekshirilgan keng tarqalgan grammatik xatolar topilmadi.</p>}
-        <button className="secondary-button" onClick={() => setShowModel(!showModel)} aria-expanded={showModel}>{showModel ? 'Namunani yashirish' : 'Namunaviy javob'}</button>
+        {prompt.model && <button className="secondary-button" onClick={() => setShowModel(!showModel)} aria-expanded={showModel}>{showModel ? 'Namunani yashirish' : 'Namunaviy javob'}</button>}
         {showModel && <p className="translation-box" lang="en">{prompt.model}</p>}
         <TutorFeedback skill="Speaking" prompt={prompt.question} answer={transcript} />
       </section>}

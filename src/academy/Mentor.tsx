@@ -1,88 +1,108 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import frames from './mentor-motion.json';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+function dispose(root: THREE.Object3D) {
+  root.traverse(child => {
+    if (!(child instanceof THREE.Mesh)) return;
+    child.geometry.dispose();
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.forEach(material => material.dispose());
+    if (child instanceof THREE.SkinnedMesh) child.skeleton.dispose();
+  });
+}
+
+// Fit the coach uniform to Geno's bind-pose vertices so it follows the skin.
+function dressCoach(scene: THREE.Object3D) {
+  const color = new THREE.Color();
+  scene.traverse(mesh => {
+    if (!(mesh instanceof THREE.SkinnedMesh)) return;
+    const points = mesh.geometry.getAttribute('position');
+    const colors = [];
+    for (let i = 0; i < points.count; i++) {
+      const y = points.getY(i), x = Math.abs(points.getX(i));
+      let shade = 0x203246;
+      if (y > 1.43 || x > .49) shade = 0xd1e0e3;
+      else if (y > .88) {
+        shade = x > .33 ? 0x167e80 : 0x10555d;
+        if (Math.abs(y - 1.23 - x * .32) < .018 || x < .009) shade = 0xffc66c;
+      }
+      color.setHex(shade);
+      colors.push(color.r, color.g, color.b);
+    }
+    mesh.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    mesh.material.dispose();
+    mesh.material = new THREE.MeshStandardMaterial({vertexColors:true, roughness:.48, metalness:.22});
+    mesh.frustumCulled = false;
+  });
+  const head = scene.getObjectByName('Head');
+  if (!head) return;
+  const headset = new THREE.Group();
+  const oval = (x:number,y:number,z:number,w:number,h:number,d:number,tint:number) => {
+    const part = new THREE.Mesh(new THREE.SphereGeometry(1,32,20),
+      new THREE.MeshStandardMaterial({color:tint, roughness:.32, metalness:.28}));
+    part.position.set(x,y,z); part.scale.set(w,h,d); headset.add(part);
+  };
+  oval(0,1.605,.046,.089,.049,.062,0x102c3a);
+  for (const side of [-1,1]) {
+    oval(side*.034,1.608,.101,.014,.009,.008,0x75ffdc);
+    oval(side*.084,1.59,-.012,.016,.039,.032,0xe9ac53);
+  }
+  scene.add(headset);
+  scene.updateMatrixWorld(true);
+  head.attach(headset);
+}
 
 export default function Mentor({ pose }: { pose: string }) {
   const host = useRef<HTMLDivElement>(null);
-  const state = useRef(pose);
-  const [fallback, setFallback] = useState(false);
-  useEffect(() => { state.current = pose; }, [pose]);
+  const current = useRef(pose);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => { current.current = pose; }, [pose]);
   useEffect(() => {
-    const element = host.current;
-    if (!element) return;
+    const el = host.current!;
     let renderer: THREE.WebGLRenderer;
     try { renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true }); }
-    catch { setFallback(true); return; }
+    catch { setFailed(true); return; }
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    element.appendChild(renderer.domElement);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    el.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 10);
-    camera.position.set(0.25, 0.13, 3.4);
-    camera.lookAt(0, -0.04, 0);
-    scene.add(new THREE.HemisphereLight(0xfff5ff, 0x8065ab, 2.6));
-    const light = new THREE.DirectionalLight(0xffe9ca, 3);
-    light.position.set(2, 4, 3);
-    scene.add(light);
-    const sphere = new THREE.SphereGeometry(1, 24, 18);
-    const materials = [0x9061d8, 0xd2f775, 0x332047].map(color => new THREE.MeshStandardMaterial({color, roughness: 0.36}));
-    const robot = new THREE.Group();
-    scene.add(robot);
-    function part(material: number) {
-      const mesh = new THREE.Mesh(sphere, materials[material]);
-      robot.add(mesh);
-      return mesh;
+    const camera = new THREE.PerspectiveCamera(31, 1, 0.01, 30);
+    scene.add(new THREE.HemisphereLight(0xffeed5, 0x537995, 2.2));
+    for (const [x,y,z,color,intensity] of [[2,3,4,0xffe0ba,3],[-2,2,-2,0x77e4ff,4]]) {
+      const light = new THREE.DirectionalLight(color,intensity);
+      light.position.set(x,y,z); scene.add(light);
     }
-    const head = part(0), visor = part(2), torso = part(0);
-    const eyes = [part(1), part(1)];
-    const bones = [[3,4],[4,5],[6,7],[7,8],[9,10],[10,11],[12,13],[13,14]];
-    const limbs = bones.map(() => part(0));
-    const joints = frames[0].map(() => part(1));
-    const points = frames[0].map(() => new THREE.Vector3());
-    const direction = new THREE.Vector3(), up = new THREE.Vector3(0,1,0);
-    function resize() {
-      renderer.setSize(element!.clientWidth, element!.clientHeight);
-      camera.aspect = element!.clientWidth / Math.max(1,element!.clientHeight);
-      camera.updateProjectionMatrix();
-    }
-    const observer = new ResizeObserver(resize);
-    observer.observe(element);
-    resize();
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-    const start = performance.now();
-    renderer.setAnimationLoop(time => {
-      const phase = reduced.matches ? 0 : (time - start) * 0.012;
-      const frame = Math.max(0,phase) % frames.length;
-      const left = frames[Math.floor(frame)], right = frames[(Math.floor(frame)+1)%frames.length];
-      points.forEach((p,i) => {
-        const a = left[i], b = right[i], f = frame % 1;
-        p.set(a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f);
-        joints[i].position.copy(p);
-        joints[i].scale.setScalar(0.055);
-      });
-      bones.forEach(([a,b],i) => {
-        direction.subVectors(points[b],points[a]);
-        limbs[i].position.copy(points[a]).addScaledVector(direction,0.5);
-        limbs[i].scale.set(0.062,direction.length()/2,0.062);
-        limbs[i].quaternion.setFromUnitVectors(up,direction.normalize());
-      });
-      torso.position.copy(points[0]).lerp(points[1],0.55);
-      torso.scale.set(0.22,0.28,0.15);
-      head.position.copy(points[2]); head.position.y += 0.07;
-      head.scale.set(0.255,0.21,0.2);
-      visor.position.copy(head.position); visor.position.z += 0.13; visor.scale.set(0.21,0.14,0.1);
-      eyes.forEach((eye,i) => {
-        eye.position.copy(visor.position); eye.position.x += i ? 0.083 : -0.083;
-        eye.position.z += 0.09; eye.scale.set(0.026,0.035,0.016);
-      });
-      robot.rotation.y = state.current === 'listening' ? -0.22 : 0.12;
-      if (!reduced.matches && state.current === 'talking') head.rotation.x = Math.sin(phase)*0.06;
-      renderer.render(scene,camera);
-    });
-    return () => {
-      observer.disconnect(); renderer.setAnimationLoop(null);
-      sphere.dispose(); materials.forEach(material => material.dispose());
-      renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
+    let inactive = false;
+    let mixer: THREE.AnimationMixer | undefined;
+    let actions: Record<string, THREE.AnimationAction> = {};
+    let active: THREE.AnimationAction | undefined;
+    const resize = () => {
+      const w=Math.max(1,el.clientWidth), h=Math.max(1,el.clientHeight);
+      renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix();
     };
-  }, []);
-  return <div className="mentor-view" ref={host} role="img" aria-label="Harakatlanuvchi 3D ingliz tili ustozi">{fallback && <span aria-hidden="true">🤖</span>}</div>;
+    const observer=new ResizeObserver(resize);observer.observe(el);resize();
+    new GLTFLoader().load('/mentor/geno.glb', model => {
+      if (inactive) { dispose(model.scene); return; }
+      scene.add(model.scene);
+      dressCoach(model.scene);
+      mixer=new THREE.AnimationMixer(model.scene);
+      actions=Object.fromEntries(model.animations.map(clip=>[clip.name,mixer!.clipAction(clip)]));
+      const height=new THREE.Box3().setFromObject(model.scene).getSize(new THREE.Vector3()).y;
+      camera.position.set(height*.1,height*.78,height*1.12);
+      camera.lookAt(0,height*.72,0);
+    },undefined,()=>{ if (!inactive) setFailed(true); });
+    let last=performance.now();
+    const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+    renderer.setAnimationLoop(now=>{
+      const next=actions[current.current] ?? actions.idle;
+      if (next && active!==next) {
+        active?.fadeOut(.25); next.reset().fadeIn(.25).play(); active=next;
+      }
+      mixer?.update(reduced.matches ? 0 : Math.min(.08,Math.max(0,now-last)/1000));
+      last=now;renderer.render(scene,camera);
+    });
+    return ()=>{inactive=true;observer.disconnect();renderer.setAnimationLoop(null);mixer?.stopAllAction();dispose(scene);renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
+  },[]);
+  return <div ref={host} className="mentor-view" role="img" aria-label="Geno — ingliz tili murabbiyi">{failed && <span>Shaharcha ustozi</span>}</div>;
 }

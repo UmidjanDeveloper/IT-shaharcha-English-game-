@@ -7,13 +7,15 @@ import Leaderboard from './components/Leaderboard';
 import TeacherSettings from './components/TeacherSettings';
 import ShadowingGame from './components/ShadowingGame';
 import DubbingGame from './components/DubbingGame';
+import { ALL_GAMES } from './academy/gameCatalog';
 import { sound } from './utils/audio';
 
-export default function App() {
-  const [appSection, setAppSection] = useState<'games' | 'shadowing' | 'dubbing'>('games');
-  const [gameState, setGameState] = useState<GameState>('setup');
-  const [selectedGame, setSelectedGame] = useState<GameType>('word-duel');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<GameDifficulty>('beginner');
+type Launch = { initialGame?: GameType; difficulty?: GameDifficulty; section?: 'games' | 'shadowing' | 'dubbing'; onLeave?: () => void };
+export default function App({initialGame, difficulty = 'beginner', section = 'games', onLeave}: Launch) {
+  const [appSection, setAppSection] = useState<'games' | 'shadowing' | 'dubbing'>(section);
+  const [gameState, setGameState] = useState<GameState>(initialGame ? 'playing' : 'setup');
+  const [selectedGame, setSelectedGame] = useState<GameType>(initialGame ?? 'word-duel');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<GameDifficulty>(difficulty);
   
   // Custom states
   const [useCustomVocabulary, setUseCustomVocabulary] = useState(false);
@@ -71,46 +73,30 @@ export default function App() {
 
   const handleReset = () => {
     sound.playTap();
+    if (onLeave) { onLeave(); return; }
     setAppSection('games');
     setGameState('setup');
     setWinner(null);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-stretch text-slate-100 relative">
-      
-      {/* Absolute cyber nodes background styling */}
-      <div className="absolute inset-x-0 top-0 bottom-0 pointer-events-none opacity-40 z-0 overflow-hidden">
-        {/* Subtle grid and lines representing connection circuitry */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:32px_32px]" />
-        
-        {/* Abstract glowing branch nodes matching the logo */}
-        <div className="absolute top-1/4 left-10 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-rose-500/5 rounded-full blur-3xl" />
-      </div>
-
-      {/* Styled Interactive Layout Header */}
-      <Header
-        leftScore={gameState === 'playing' ? leftScore : undefined}
-        rightScore={gameState === 'playing' ? rightScore : undefined}
-        leftTeamName={teamLeft.name}
-        rightTeamName={teamRight.name}
-        leftColor={teamLeft.color}
-        rightColor={teamRight.color}
-        onReset={handleReset}
-      />
-
+    <div className={onLeave ? 'integrated-game' : 'min-h-screen bg-slate-950 text-slate-100 relative'}>
+      {onLeave && initialGame ? <div className="club-game-header"><div>
+        <h1>{ALL_GAMES.find(game=>game.id===initialGame)?.title}</h1>
+        <p>{teamLeft.name} {leftScore} · {rightScore} {teamRight.name}</p>
+      </div><button className="secondary-button" onClick={()=>setShowTeacherSettings(true)}>Sozlamalar</button></div> :
+        !onLeave && <Header leftScore={leftScore} rightScore={rightScore} leftTeamName={teamLeft.name} rightTeamName={teamRight.name} leftColor={teamLeft.color} rightColor={teamRight.color} onReset={handleReset}/>}
       {/* Primary Game Display Window */}
-      <main className="flex-1 w-full flex flex-col justify-start relative z-10">
+      <section className="flex-1 w-full flex flex-col justify-start relative z-10">
 
         {/* Shadowing Section */}
         {appSection === 'shadowing' && (
-          <ShadowingGame onBack={() => setAppSection('games')} />
+          <ShadowingGame onBack={handleReset} />
         )}
 
         {/* Dubbing Section */}
         {appSection === 'dubbing' && (
-          <DubbingGame onBack={() => setAppSection('games')} />
+          <DubbingGame onBack={handleReset} />
         )}
 
         {appSection === 'games' && gameState === 'setup' && (
@@ -150,7 +136,7 @@ export default function App() {
             onHome={handleReset}
           />
         )}
-      </main>
+      </section>
 
       {/* Teacher Settings Cockpit Modal Trigger */}
       {showTeacherSettings && (
@@ -169,13 +155,6 @@ export default function App() {
         />
       )}
 
-      {/* Beautiful humble footer */}
-      <footer className="w-full text-center py-4 border-t border-slate-900/40 text-xs text-slate-500 bg-slate-950 relative z-10 select-none">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span className="cursor-pointer hover:text-white transition-colors" onClick={handleReset}>IT Shaharcha • Xatirchi tumani • Yoshlar Axborot Texnologiyalari Markazi</span>
-          <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wide">IQ-ARENA INTERFAOL DOSKA TAYYOR TIZIMI</span>
-        </div>
-      </footer>
 
     </div>
   );

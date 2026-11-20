@@ -11,9 +11,15 @@ import { vocabulary } from './vocabulary';
 import { WordSprint } from './WordSprint';
 import { SpeakingStudio } from './SpeakingStudio';
 import { speakingPrompts } from './speaking';
+import { LearningPath } from './LearningPath';
+import { Library } from './Library';
+import type { LaunchGame } from './Library';
+import type { GameType } from '../types';
+import { Workshop, workshops } from './Workshop';
 import './academy.css';
 import { MockHistory } from './MockHistory';
 
+const OfficialIELTS = lazy(()=>import('./OfficialStudio').then(m=>({ default:m.OfficialIELTS })));
 const MockExam = lazy(() => import('./MockExam').then(m => ({ default: m.MockExam })));
 const BoardArena = lazy(() => import('./BoardArena').then(m => ({ default: m.BoardArena })));
 const ClassicGames = lazy(() => import('../App'));
@@ -39,7 +45,7 @@ type Screen = 'home' | 'progress' | 'legacy';
 type Awards = Record<string, number>;
 
 const storageKey = 'it-shaharcha-academy-xp-v1';
-const months = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'];
+
 
 function loadAwards(): Awards {
   try {
@@ -58,6 +64,8 @@ export default function Academy() {
   const [level, setLevel] = useState<Level>('beginner');
   const [screen, setScreen] = useState<Screen>('home');
   const [activity, setActivity] = useState<Activity | null>(null);
+  const [launched, setLaunched] = useState<LaunchGame | null>(null);
+  const workshop = workshops.find(g => g.id === launched?.id);
   const [board, setBoard] = useState(false);
   const [dailyRound, setDailyRound] = useState<number | null>(null);
   const [awards, setAwards] = useState(loadAwards);
@@ -66,11 +74,6 @@ export default function Academy() {
   const main = useRef<HTMLElement>(null);
   const selectedLevel = levels.find(item => item.id === level)!;
   const xp = Object.values(awards).reduce((total, points) => total + points, 0);
-  const today = new Date();
-  const dayNumber = Math.floor(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86400000);
-  const dailyIndex = dayNumber % quizzes[level].length;
-  const dailyComplete = awards[`${level}-quiz-${dailyIndex}`] === 10;
-
   useEffect(() => {
     try { localStorage.setItem(storageKey, JSON.stringify(awards)); } catch { /* Practice still works without storage. */ }
   }, [awards]);
@@ -81,6 +84,7 @@ export default function Academy() {
   }, [screen, activity]);
 
   function navigate(next: Screen) {
+    setLaunched(null);
     setScreen(next);
     setActivity(null);
     setDailyRound(null);
@@ -105,6 +109,14 @@ export default function Academy() {
     });
   }
 
+  function showLibrary() {
+    navigate('home');
+    requestAnimationFrame(()=>document.getElementById('club-library')?.scrollIntoView());
+  }
+  function official() {
+    navigate('home'); setLevel('ielts');
+    requestAnimationFrame(()=>activitiesSection.current?.scrollIntoView());
+  }
   return (
     <div className={`academy ${board ? 'academy-board' : ''}`}>
       <header className="academy-header">
@@ -116,6 +128,8 @@ export default function Academy() {
           <nav className="academy-nav" aria-label="Asosiy menyu">
             <button aria-current={screen === 'home' && !activity ? 'page' : undefined} onClick={() => navigate('home')}>Bosh sahifa</button>
             <button aria-current={activity ? 'page' : undefined} onClick={openActivities}>Mashqlar</button>
+            <button onClick={showLibrary}>O‘yinlar</button>
+            <button onClick={official}>IELTS</button>
             <button aria-current={screen === 'progress' ? 'page' : undefined} onClick={() => navigate('progress')}>Natijalar</button>
           </nav>
           <div className="academy-tools">
@@ -128,14 +142,13 @@ export default function Academy() {
       </header>
 
       <main className={`academy-main ${screen === 'legacy' ? 'academy-legacy' : ''}`} ref={main} tabIndex={-1}>
-        {screen === 'legacy' && (
-          <>
-            <button className="back-button archive-back" onClick={() => navigate('home')}><ArrowLeft size={17} /> Bosh sahifaga qaytish</button>
-            <Suspense fallback={<p className="legacy-loading" role="status">Klassik o‘yinlar yuklanmoqda…</p>}>
-              <ClassicGames />
-            </Suspense>
-          </>
-        )}
+        {screen === 'legacy' && launched && (workshop ?
+          <Workshop game={workshop} onExit={showLibrary}/> :
+          <><button className="back-button archive-back" onClick={showLibrary}>← O‘yinlarga qaytish</button>
+          <Suspense fallback="O‘yin yuklanmoqda…"><ClassicGames key={launched.id}
+            initialGame={launched.id === 'shadowing' || launched.id === 'dubbing' ? undefined : launched.id as GameType}
+            difficulty={level === 'beginner' ? 'beginner' : level === 'intermediate' ? 'elementary' : 'advanced'}
+            section={launched.id === 'shadowing' || launched.id === 'dubbing' ? launched.id : 'games'} onLeave={showLibrary}/></Suspense></>)}
 
         {screen === 'progress' && (
           <section className="progress-panel">
@@ -163,29 +176,18 @@ export default function Academy() {
 
         {screen === 'home' && !activity && (
           <>
-            <div className="welcome-grid">
-              <section className="academy-hero" aria-labelledby="academy-title">
-                <div className="hero-content">
-                  <div className="hero-tag"><span /> IT SHAHARCHA · ENGLISH CLUB</div>
-                  <h1 id="academy-title">Inglizcha.<br /><em>Har kuni.</em></h1>
-                  <p>Birinchi so‘zdan IELTS gacha. O‘qi, sinab ko‘r va do‘stingni duelga chorla.</p>
-                  <button className="primary-button" onClick={() => {
-                    levelsSection.current?.scrollIntoView({ block: 'start' });
-                    levelsSection.current?.focus({ preventScroll: true });
-                  }}>Mashqni boshlash <ArrowDown size={17} /></button>
-                </div>
-              </section>
-
-              <section className="daily-card" aria-labelledby="daily-title">
-                <div className="daily-top"><span className="daily-icon"><Flame size={23} /></span><span className="daily-day">{today.getDate()} {months[today.getMonth()]}</span></div>
-                <div><h2 id="daily-title">Kunlik <br />sinov.</h2><p>{selectedLevel.title} · 1 savol</p></div>
-                <button className="daily-button" onClick={() => openExercise('quiz', dailyIndex)}>{dailyComplete ? 'Qayta o‘ynash' : 'Sinovni boshlash'} <ArrowUpRight size={18} /></button>
-              </section>
-            </div>
+            <section className="club-cover">
+              <div className="club-cover-copy"><span>IT SHAHARCHA · XATIRCHI</span>
+                <h1>Ingliz tilini<br/>qayerdan boshlaymiz?</h1>
+                <p>Darajangizni tanlang, sinfdoshlar bilan o‘ynang yoki IELTS ko‘nikmalarini mashq qiling.</p>
+                <div><button className="primary-button" onClick={openActivities}>Dars tanlash <ArrowDown size={17}/></button>
+                <button className="cover-link" onClick={showLibrary}>O‘yin tanlash →</button></div>
+              </div>
+            </section>
 
             <section className="academy-section" ref={activitiesSection} tabIndex={-1} aria-labelledby="activity-title">
               <div className="section-head">
-                <div><h2 id="activity-title">O‘quv maydoni</h2><p>{selectedLevel.tag}</p></div>
+                <div><h2 id="activity-title">Darajangizni tanlang</h2><p>{selectedLevel.tag}</p></div>
                 <div className="level-selector" ref={levelsSection} tabIndex={-1} aria-label="Darajani tanlang" role="group">
                   {levels.map(item => (
                     <button key={item.id} className={item.color} onClick={() => setLevel(item.id)} aria-pressed={item.id === level}>
@@ -194,6 +196,9 @@ export default function Academy() {
                   ))}
                 </div>
               </div>
+              {level === 'ielts' ? <Suspense fallback="Rasmiy mashqlar yuklanmoqda…"><OfficialIELTS/></Suspense> : <>
+              <LearningPath key={level} beginner={level === 'beginner'}/>
+              <h3 className="club-subtitle">Shaharcha mashqlari</h3>
               <div className="level-grid activity-grid">
                 {activities.map(item => (
                   <button key={item.id} className={`activity-card ${item.color}`} onClick={() => openExercise(item.id)}>
@@ -203,8 +208,9 @@ export default function Academy() {
                     <item.icon className="activity-watermark" size={144} strokeWidth={1} aria-hidden="true" />
                   </button>
                 ))}
-              </div>
+              </div></>}
             </section>
+            <Library onStart={game=>{setLaunched(game);setScreen('legacy');window.scrollTo(0,0);}}/>
           </>
         )}
 
@@ -225,7 +231,7 @@ export default function Academy() {
 
       <footer className="academy-footer">
         <span><Sparkles size={15} /> IT Shaharcha · Xatirchi</span>
-        {screen !== 'legacy' && <button onClick={() => navigate('legacy')}><Gamepad2 size={17} /> Klassik o‘yinlar <ArrowUpRight size={15} /></button>}
+
       </footer>
     </div>
   );
