@@ -155,3 +155,41 @@ test('class lock always has an end time so a forgotten PIN cannot lock a compute
   assert.equal(lockRemaining(now, String(now - 1)), 0);
   assert.ok(lockDurations.every(([m]) => m <= 480));
 });
+
+test('Headway path covers Beginner to Advanced in book order with valid lessons', async () => {
+  const { headway, topicById, levelItems, startingBook } = await import('./grammar/headway');
+  assert.deepEqual(headway.map(b => b.title), ['Beginner', 'Elementary', 'Pre-Intermediate', 'Intermediate', 'Upper-Intermediate', 'Advanced']);
+  for (const book of headway) {
+    assert.ok(book.lessons.length >= 12, book.title);
+    const units = book.lessons.map(l => l.unit).filter((u): u is number => u !== undefined);
+    assert.deepEqual(units, [...units].sort((a, b) => a - b), `${book.title}: units in book order`);
+    for (const lesson of book.lessons) {
+      const topic = topicById(lesson.topic);
+      assert.ok(topic, `${book.title}: missing topic ${lesson.topic}`);
+      assert.ok(topic.examples.length >= 2 && topic.items.length >= 5, topic.id);
+    }
+    assert.ok(levelItems(book.id).length >= 50, `${book.title} has enough game items`);
+  }
+  for (const item of headway.flatMap(b => b.lessons.flatMap(l => topicById(l.topic).items))) {
+    if (item.kind === 'order') assert.ok(checkOrder(item.sentence.split(' '), item.sentence));
+    else { assert.ok(item.answer >= 0 && item.answer < item.options.length, item.prompt); assert.equal(new Set(item.options).size, item.options.length, item.prompt); }
+  }
+  assert.equal(startingBook('beginner'), 'beginner');
+  assert.equal(startingBook('ielts'), 'upper-intermediate');
+});
+
+test('listen-and-repeat marks the words the learner said, in order', async () => {
+  const { compareSpoken } = await import('./grammar/RepeatAfterMe');
+  assert.equal(compareSpoken('I have lost my keys.', 'I have lost my keys').score, 100);
+  const partial = compareSpoken('She has a small cat.', 'she has cat');
+  assert.deepEqual(partial.words.map(w => w.ok), [true, true, false, false, true]);
+  assert.equal(partial.score, 60);
+  assert.equal(compareSpoken('Hello', '').score, 0);
+});
+
+test('listen-and-repeat accepts expanded contractions', async () => {
+  const { compareSpoken } = await import('./grammar/RepeatAfterMe');
+  assert.equal(compareSpoken('Hello, I’m Malika.', 'hello I am Malika').score, 100);
+  assert.equal(compareSpoken("She doesn't like coffee.", 'she does not like coffee').score, 100);
+  assert.equal(compareSpoken('I can’t swim.', 'I cannot swim').score, 100);
+});

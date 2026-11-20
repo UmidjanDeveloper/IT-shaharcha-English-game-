@@ -4,7 +4,7 @@ import { GraduationCap, Maximize2, Mic, Minimize2, Send, Square, Volume2, Volume
 import { ask, explain, getCapabilities, speak, stopSpeaking, transcribe } from './ai';
 import type { Capabilities, Lang } from './ai';
 import { AnswerRecorder, recordingSupported } from './ielts/recorder';
-import { cefrLevels, grammar } from './grammar/curriculum';
+import { headway, topicById } from './grammar/headway';
 
 const Mentor = lazy(() => import('./Mentor'));
 const Classroom3D = lazy(() => import('./Classroom3D'));
@@ -20,7 +20,7 @@ export function openClassroom() {
 // Without the AI service the teacher still answers grammar questions from the built-in course.
 export function offlineAnswer(question: string) {
   const q = question.toLowerCase();
-  const topics = cefrLevels.flatMap(level => grammar[level].map(t => ({ level, t })));
+  const topics = headway.flatMap(book => book.lessons.map(l => ({ level: `Headway ${book.title}`, t: topicById(l.topic) })));
   const scored = topics.map(({ level, t }) => {
     const words = (t.title + ' ' + t.uz).toLowerCase().split(/[^\p{L}]+/u).filter(w => w.length > 2);
     return { level, t, score: words.filter(w => q.includes(w)).length };

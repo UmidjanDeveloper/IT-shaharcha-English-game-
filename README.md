@@ -11,6 +11,10 @@ npm test
 npm run build
 ```
 
+## Headway grammatika yo‘li
+
+**Grammatika** bo‘limi Headway (5-nashr) kitoblaridagi grammatika ketma-ketligida: Beginner → Elementary → Pre-Intermediate → Intermediate → Upper-Intermediate → Advanced, jami 85 ta dars (`src/academy/grammar/headway.ts`). Har bir dars: o‘zbekcha qoida, tuzilma, **Eshit va takrorla** (ustoz o‘qiydi, o‘quvchi takrorlaydi, to‘g‘ri aytilgan so‘zlar belgilanadi), 5 ta mashq, AI bilan cheksiz qo‘shimcha mashqlar va grammatika o‘yinlari. Tushuntirish va mashqlar klubniki — kitob matni ko‘chirilmagan; “Unit” raqami faqat mundarija tekshirilgan joylarda ko‘rsatiladi. Headway — Oxford University Press nashri, sayt nashriyot bilan bog‘liq emas.
+
 ## AI va ovoz kalitlari
 
 `.env.example` dan nusxa olib `.env.local` yarating (yoki Vercel’da Environment Variables). Kalitlar faqat serverda turadi: brauzer `/api/tutor` va `/api/transcribe` ga murojaat qiladi.

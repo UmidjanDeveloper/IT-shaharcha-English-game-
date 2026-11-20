@@ -22,6 +22,5 @@ export function Library({onStart}:{onStart:(g:LaunchGame)=>void}) {
     <div className="library-grid">{games.slice(0,count).map(g=><button key={g.id} onClick={()=>onStart(g)}><span aria-hidden="true">{g.icon}</span><strong>{g.title}</strong><small>{g.description}</small></button>)}</div>
     {!games.length&&<p>Bu nomdagi o‘yin topilmadi.</p>}
     {games.length>count&&<button className="secondary-button" onClick={()=>setCount(count+12)}>Yana o‘yinlar ({games.length-count})</button>}
-    <div className="club-tabs">{[['shadowing','Shadowing'],['dubbing','Dublyaj']].map(([id,title])=><button key={id} onClick={()=>onStart({id,title})}>{title} ↗</button>)}</div>
   </section>;
 }

@@ -5,14 +5,11 @@ import SetupScreen from './components/SetupScreen';
 import VocabularyGame from './components/VocabularyGame';
 import Leaderboard from './components/Leaderboard';
 import TeacherSettings from './components/TeacherSettings';
-import ShadowingGame from './components/ShadowingGame';
-import DubbingGame from './components/DubbingGame';
 import { ALL_GAMES } from './academy/gameCatalog';
 import { sound } from './utils/audio';
 
-type Launch = { initialGame?: GameType; difficulty?: GameDifficulty; section?: 'games' | 'shadowing' | 'dubbing'; onLeave?: () => void };
-export default function App({initialGame, difficulty = 'beginner', section = 'games', onLeave}: Launch) {
-  const [appSection, setAppSection] = useState<'games' | 'shadowing' | 'dubbing'>(section);
+type Launch = { initialGame?: GameType; difficulty?: GameDifficulty; onLeave?: () => void };
+export default function App({initialGame, difficulty = 'beginner', onLeave}: Launch) {
   const [gameState, setGameState] = useState<GameState>(initialGame ? 'playing' : 'setup');
   const [selectedGame, setSelectedGame] = useState<GameType>(initialGame ?? 'word-duel');
   const [selectedDifficulty, setSelectedDifficulty] = useState<GameDifficulty>(difficulty);
@@ -74,7 +71,6 @@ export default function App({initialGame, difficulty = 'beginner', section = 'ga
   const handleReset = () => {
     sound.playTap();
     if (onLeave) { onLeave(); return; }
-    setAppSection('games');
     setGameState('setup');
     setWinner(null);
   };
@@ -89,17 +85,7 @@ export default function App({initialGame, difficulty = 'beginner', section = 'ga
       {/* Primary Game Display Window */}
       <section className="flex-1 w-full flex flex-col justify-start relative z-10">
 
-        {/* Shadowing Section */}
-        {appSection === 'shadowing' && (
-          <ShadowingGame onBack={handleReset} />
-        )}
-
-        {/* Dubbing Section */}
-        {appSection === 'dubbing' && (
-          <DubbingGame onBack={handleReset} />
-        )}
-
-        {appSection === 'games' && gameState === 'setup' && (
+        {gameState === 'setup' && (
           <SetupScreen
             teamLeft={teamLeft}
             teamRight={teamRight}
@@ -107,12 +93,10 @@ export default function App({initialGame, difficulty = 'beginner', section = 'ga
             useCustomVocabulary={useCustomVocabulary}
             onStartGame={handleStartGame}
             onOpenTeacherSettings={() => setShowTeacherSettings(true)}
-            onOpenShadowing={() => setAppSection('shadowing')}
-            onOpenDubbing={() => setAppSection('dubbing')}
           />
         )}
 
-        {appSection === 'games' && gameState === 'playing' && (
+        {gameState === 'playing' && (
           <div className="flex-1 w-full bg-slate-950/85 backdrop-blur-[2px] transition-all">
             <VocabularyGame
               selectedGame={selectedGame}
@@ -127,7 +111,7 @@ export default function App({initialGame, difficulty = 'beginner', section = 'ga
           </div>
         )}
 
-        {appSection === 'games' && gameState === 'ended' && winner && (
+        {gameState === 'ended' && winner && (
           <Leaderboard
             winner={winner}
             leftTeam={{ ...teamLeft, score: leftScore }}

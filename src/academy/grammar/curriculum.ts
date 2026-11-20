@@ -6,9 +6,9 @@ export type GrammarItem =
 export type GrammarTopic = { id: string; title: string; uz: string; rule: string; form: string[]; examples: string[]; items: GrammarItem[] };
 export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
 
-const c = (prompt: string, options: string[], answer: number, explanation: string): GrammarItem => ({ kind: 'choice', prompt, options, answer, explanation });
-const f = (prompt: string, options: string[], answer: number, explanation: string): GrammarItem => ({ kind: 'fix', prompt, options, answer, explanation });
-const o = (sentence: string, prompt: string, explanation: string): GrammarItem => ({ kind: 'order', sentence, prompt, explanation });
+export const c = (prompt: string, options: string[], answer: number, explanation: string): GrammarItem => ({ kind: 'choice', prompt, options, answer, explanation });
+export const f = (prompt: string, options: string[], answer: number, explanation: string): GrammarItem => ({ kind: 'fix', prompt, options, answer, explanation });
+export const o = (sentence: string, prompt: string, explanation: string): GrammarItem => ({ kind: 'order', sentence, prompt, explanation });
 
 export const grammar: Record<CefrLevel, GrammarTopic[]> = {
   A1: [

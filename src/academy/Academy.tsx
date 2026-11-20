@@ -20,7 +20,8 @@ import './academy.css';
 import { MockHistory } from './MockHistory';
 import { AiTeacher, askTeacher, openClassroom } from './AiTeacher';
 import { ClassLockButton, useClassLock } from './ClassLock';
-import type { CefrLevel } from './grammar/curriculum';
+import { startingBook } from './grammar/headway';
+import type { HeadwayLevelId } from './grammar/headway';
 import type { GrammarGameId } from './grammar/GrammarCourse';
 
 const OfficialIELTS = lazy(()=>import('./OfficialStudio').then(m=>({ default:m.OfficialIELTS })));
@@ -76,7 +77,7 @@ export default function Academy() {
   const [board, setBoard] = useState(false);
   const [dailyRound, setDailyRound] = useState<number | null>(null);
   const [awards, setAwards] = useState(loadAwards);
-  const [grammarLevel, setGrammarLevel] = useState<CefrLevel>('A1');
+  const [grammarLevel, setGrammarLevel] = useState<HeadwayLevelId>('beginner');
   const lock = useClassLock();
   const levelsSection = useRef<HTMLDivElement>(null);
   const activitiesSection = useRef<HTMLElement>(null);
@@ -122,7 +123,7 @@ export default function Academy() {
     navigate('home');
     requestAnimationFrame(()=>document.getElementById('club-library')?.scrollIntoView());
   }
-  function openGrammar(next: CefrLevel = level === 'beginner' ? 'A1' : level === 'intermediate' ? 'B1' : 'B2') {
+  function openGrammar(next: HeadwayLevelId = startingBook(level)) {
     setGrammarLevel(next);
     navigate('grammar');
   }
@@ -158,14 +159,14 @@ export default function Academy() {
 
       <main className={`academy-main ${screen === 'legacy' ? 'academy-legacy' : ''}`} ref={main} tabIndex={-1}>
         {screen === 'grammar' && <Suspense fallback="Grammatika yuklanmoqda…"><GrammarCourse key={grammarLevel} startLevel={grammarLevel} onAskTeacher={askTeacher} onExit={() => navigate('home')} /></Suspense>}
-        {screen === 'legacy' && launched?.id.startsWith('grammar-') && <Suspense fallback="O‘yin yuklanmoqda…"><GrammarGame id={launched.id as GrammarGameId} level={level === 'beginner' ? 'A1' : level === 'intermediate' ? 'B1' : 'B2'} onExit={showLibrary} /></Suspense>}
+        {screen === 'legacy' && launched?.id.startsWith('grammar-') && <Suspense fallback="O‘yin yuklanmoqda…"><GrammarGame id={launched.id as GrammarGameId} level={startingBook(level)} onExit={showLibrary} /></Suspense>}
         {screen === 'legacy' && launched && !launched.id.startsWith('grammar-') && (workshop ?
           <Workshop game={workshop} onExit={showLibrary}/> :
           <><button className="back-button archive-back" onClick={showLibrary}>← O‘yinlarga qaytish</button>
           <Suspense fallback="O‘yin yuklanmoqda…"><ClassicGames key={launched.id}
-            initialGame={launched.id === 'shadowing' || launched.id === 'dubbing' ? undefined : launched.id as GameType}
+            initialGame={launched.id as GameType}
             difficulty={level === 'beginner' ? 'beginner' : level === 'intermediate' ? 'elementary' : 'advanced'}
-            section={launched.id === 'shadowing' || launched.id === 'dubbing' ? launched.id : 'games'} onLeave={showLibrary}/></Suspense></>)}
+            onLeave={showLibrary}/></Suspense></>)}
 
         {screen === 'progress' && (
           <section className="progress-panel">

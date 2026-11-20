@@ -17,8 +17,6 @@ interface SetupScreenProps {
     maxScore: number;
   }) => void;
   onOpenTeacherSettings: () => void;
-  onOpenShadowing: () => void;
-  onOpenDubbing: () => void;
 }
 
 export default function SetupScreen({
@@ -27,9 +25,7 @@ export default function SetupScreen({
   maxScore,
   useCustomVocabulary,
   onStartGame,
-  onOpenTeacherSettings,
-  onOpenShadowing,
-  onOpenDubbing
+  onOpenTeacherSettings
 }: SetupScreenProps) {
   const [selectedGame, setSelectedGame] = useState<GameType>('word-duel');
   const [selectedDifficulty, setSelectedDifficulty] = useState<GameDifficulty>('beginner');
@@ -73,45 +69,6 @@ export default function SetupScreen({
         <p className="text-slate-400 max-w-lg mx-auto text-xs md:text-sm mt-2 leading-relaxed">
           54 ta interaktiv o'yin! Headway kitobiga asoslangan. Har bir o'yin ingliz tilini mukammal o'rgatadi.
         </p>
-      </div>
-
-      {/* Speaking sections — Shadowing + Dubbing */}
-      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
-        {/* Shadowing */}
-        <button
-          onClick={() => { sound.playTap(); onOpenShadowing(); }}
-          className="flex items-center justify-between gap-3 bg-gradient-to-r from-indigo-950/80 to-purple-950/80 border border-indigo-500/40 hover:border-indigo-400/70 rounded-2xl px-4 py-4 cursor-pointer transition-all group shadow-xl shadow-indigo-500/10 hover:shadow-indigo-500/20"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg flex-shrink-0">
-              <Mic className="w-5 h-5 text-white" />
-            </div>
-            <div className="text-left">
-              <p className="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Yangi ✨</p>
-              <h3 className="text-sm font-black text-white">🎤 Shadowing</h3>
-              <p className="text-[9px] text-slate-400">Tinglang va talaffuz qiling</p>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-indigo-400 group-hover:translate-x-1 transition-transform flex-shrink-0" />
-        </button>
-
-        {/* Dubbing */}
-        <button
-          onClick={() => { sound.playTap(); onOpenDubbing(); }}
-          className="flex items-center justify-between gap-3 bg-gradient-to-r from-rose-950/80 to-orange-950/80 border border-rose-500/40 hover:border-rose-400/70 rounded-2xl px-4 py-4 cursor-pointer transition-all group shadow-xl shadow-rose-500/10 hover:shadow-rose-500/20"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-orange-600 flex items-center justify-center shadow-lg flex-shrink-0">
-              <span className="text-lg">🎬</span>
-            </div>
-            <div className="text-left">
-              <p className="text-[9px] font-black text-rose-300 uppercase tracking-widest">Yangi ✨</p>
-              <h3 className="text-sm font-black text-white">🎬 Dublyaj Studio</h3>
-              <p className="text-[9px] text-slate-400">Kinolarga ovoz bering</p>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-rose-400 group-hover:translate-x-1 transition-transform flex-shrink-0" />
-        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">

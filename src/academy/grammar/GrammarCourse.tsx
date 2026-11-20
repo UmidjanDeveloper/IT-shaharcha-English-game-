@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, MessageCircle, RotateCcw, Sparkles, Timer, Trophy, Volume2, X } from 'lucide-react';
 import { ask, explain, getCapabilities, speak } from '../ai';
-import { allItems, cefrLevels, checkOrder, grammar } from './curriculum';
-import type { CefrLevel, GrammarItem, GrammarTopic } from './curriculum';
+import { checkOrder } from './curriculum';
+import type { GrammarItem, GrammarTopic } from './curriculum';
+import { headway, headwayLevel, levelItems, topicById } from './headway';
+import type { HeadwayLesson, HeadwayLevel, HeadwayLevelId } from './headway';
+import { RepeatAfterMe } from './RepeatAfterMe';
 
 const progressKey = 'shaharcha-grammar-v1';
 type Progress = Record<string, number>;
@@ -22,35 +25,55 @@ export const grammarGames = [
 ] as const;
 export type GrammarGameId = typeof grammarGames[number]['id'];
 
-export function GrammarCourse({ startLevel = 'A1', onAskTeacher, onExit }: { startLevel?: CefrLevel; onAskTeacher?: (question: string) => void; onExit?: () => void }) {
-  const [level, setLevel] = useState<CefrLevel>(startLevel);
-  const [topic, setTopic] = useState<GrammarTopic | null>(null);
+export function GrammarCourse({ startLevel = 'beginner', onAskTeacher, onExit }: { startLevel?: HeadwayLevelId; onAskTeacher?: (question: string) => void; onExit?: () => void }) {
+  const [level, setLevel] = useState<HeadwayLevelId>(startLevel);
+  const [open, setOpen] = useState<number | null>(null);
   const [game, setGame] = useState<GrammarGameId | null>(null);
   const [progress, setProgress] = useState(readProgress);
   useEffect(() => { try { localStorage.setItem(progressKey, JSON.stringify(progress)); } catch { /* optional */ } }, [progress]);
-  useEffect(() => { window.scrollTo(0, 0); }, [topic, game]);
+  useEffect(() => { window.scrollTo(0, 0); }, [open, game, level]);
   const done = (id: string, score: number) => setProgress(p => score > (p[id] ?? 0) ? { ...p, [id]: score } : p);
+  const book = headwayLevel(level);
+  const passed = (lesson: HeadwayLesson) => (progress[lesson.topic] ?? 0) >= 80;
+  const next = book.lessons.findIndex(l => !passed(l));
 
   if (game) return <GrammarGame id={game} level={level} onExit={() => setGame(null)} />;
-  if (topic) return <Lesson topic={topic} level={level} onDone={s => done(topic.id, s)} onAskTeacher={onAskTeacher} onExit={() => setTopic(null)} />;
+  if (open !== null) {
+    const lesson = book.lessons[open];
+    return <Lesson key={level + open} topic={topicById(lesson.topic)} book={book} lesson={lesson} number={open + 1} onDone={s => done(lesson.topic, s)} onAskTeacher={onAskTeacher}
+      onNext={open + 1 < book.lessons.length ? () => setOpen(open + 1) : undefined} onExit={() => setOpen(null)} />;
+  }
 
   return <section className="practice grammar-course">
     {onExit && <button className="back-button" onClick={onExit}><ArrowLeft size={17} /> Orqaga</button>}
-    <div className="practice-heading"><div className="practice-kicker">GRAMMATIKA KURSI · A1 → C1</div><h1>Grammatikani bosqichma-bosqich o‘rganing</h1>
-      <p>Har bir mavzu: o‘zbekcha tushuntirish, inglizcha misollar, mashqlar va AI ustozdan cheksiz yangi topshiriqlar.</p></div>
-    <div className="club-tabs" role="group" aria-label="Daraja">{cefrLevels.map(l => {
-      const topics = grammar[l], completed = topics.filter(t => (progress[t.id] ?? 0) >= 80).length;
-      return <button key={l} aria-pressed={level === l} onClick={() => setLevel(l)}>{l} <small>{completed}/{topics.length}</small></button>;
+    <div className="practice-heading"><div className="practice-kicker">HEADWAY GRAMMATIKA YO‘LI · BEGINNER → ADVANCED</div><h1>Kitob tartibida grammatika</h1>
+      <p>Darslar Headway kitoblaridagi grammatika ketma-ketligida. Har bir dars: o‘zbekcha qoida, misollar, “Eshit va takrorla” va mashqlar. Tushuntirish va mashqlar klubimizniki — kitob bilan parallel ishlating.</p></div>
+    <div className="book-tabs" role="group" aria-label="Headway darajasi">{headway.map(b => {
+      const count = b.lessons.filter(passed).length;
+      return <button key={b.id} className={b.color} aria-pressed={level === b.id} onClick={() => setLevel(b.id)}>
+        <strong>{b.title}</strong><small>{b.cefr} · {count}/{b.lessons.length}</small>
+        <progress value={count} max={b.lessons.length} aria-label={`${b.title}: ${count} ta dars o‘tilgan`} /></button>;
     })}</div>
-    <div className="grammar-grid">{grammar[level].map((t, i) => <button key={t.id} className="grammar-topic" onClick={() => setTopic(t)}>
-      <span className="tile-tag">{level} · {i + 1}</span><strong lang="en">{t.title}</strong><small>{t.uz}</small>
-      <progress value={progress[t.id] ?? 0} max={100} aria-label={`${t.title} natijasi`} />{(progress[t.id] ?? 0) >= 80 && <Check className="topic-done" size={18} />}</button>)}</div>
-    <h3 className="club-subtitle">Grammatika o‘yinlari ({level})</h3>
+    <div className="book-head"><div><h2>Headway {book.title} <span>{book.cefr}</span></h2><p>{book.about}</p></div>
+      {next >= 0 ? <button className="primary-button" onClick={() => setOpen(next)}>{next === 0 ? 'Boshlash' : 'Davom etish'} · {next + 1}-dars <ArrowRight size={17} /></button>
+        : <p className="ok book-done">Daraja tugallandi! Keyingi kitobga o‘ting.</p>}</div>
+    <ol className="book-path">{book.lessons.map((lesson, i) => {
+      const t = topicById(lesson.topic), score = progress[lesson.topic] ?? 0;
+      return <li key={i} className={`${passed(lesson) ? 'done' : ''} ${i === next ? 'current' : ''}`}>
+        <button onClick={() => setOpen(i)}>
+          <span className="step-dot" aria-hidden="true">{passed(lesson) ? <Check size={16} /> : i + 1}</span>
+          <span className="step-text"><small>{lesson.unit ? `Unit ${lesson.unit}` : `${i + 1}-dars`}{lesson.focus ? ` · ${lesson.focus}` : ''}</small>
+            <strong lang="en">{t.title}</strong><em>{t.uz}</em></span>
+          <span className="step-score">{score ? `${score}%` : ''}</span>
+        </button></li>;
+    })}</ol>
+    <p className="grading-note">“Unit” raqami Headway 5-nashr mundarijasi bilan tekshirilgan joylarda ko‘rsatilgan; boshqa darslarda mavzu nomi bo‘yicha toping. Headway — Oxford University Press nashri; bu sayt nashriyot bilan bog‘liq emas.</p>
+    <h3 className="club-subtitle">Grammatika o‘yinlari · Headway {book.title}</h3>
     <div className="library-grid">{grammarGames.map(g => <button key={g.id} onClick={() => setGame(g.id)}><span aria-hidden="true">{g.icon}</span><strong>{g.title}</strong><small>{g.description}</small></button>)}</div>
   </section>;
 }
 
-function Lesson({ topic, level, onDone, onAskTeacher, onExit }: { topic: GrammarTopic; level: CefrLevel; onDone: (score: number) => void; onAskTeacher?: (q: string) => void; onExit: () => void }) {
+function Lesson({ topic, book, lesson, number, onDone, onAskTeacher, onNext, onExit }: { topic: GrammarTopic; book: HeadwayLevel; lesson: HeadwayLesson; number: number; onDone: (score: number) => void; onAskTeacher?: (q: string) => void; onNext?: () => void; onExit: () => void }) {
   const [items, setItems] = useState<GrammarItem[]>(topic.items);
   const [index, setIndex] = useState(-1);
   const [correct, setCorrect] = useState(0);
@@ -63,7 +86,7 @@ function Lesson({ topic, level, onDone, onAskTeacher, onExit }: { topic: Grammar
   async function more() {
     setBusy(true); setMessage('');
     try {
-      const data = await ask<{ items: GrammarItem[] }>({ action: 'exercises', language: 'uz', level, topic: topic.title, count: 6 });
+      const data = await ask<{ items: GrammarItem[] }>({ action: 'exercises', language: 'uz', level: book.cefr.split('–')[0], topic: `${topic.title} (Headway ${book.title})`, count: 6 });
       const valid = data.items.filter(it => it.kind === 'order' ? it.sentence.split(' ').length > 2 : it.options.length >= 2 && it.answer >= 0 && it.answer < it.options.length);
       if (!valid.length) throw new Error('empty');
       setItems(valid); setIndex(0); setCorrect(0);
@@ -75,18 +98,19 @@ function Lesson({ topic, level, onDone, onAskTeacher, onExit }: { topic: Grammar
   useEffect(() => { if (finished) onDone(Math.round((correct / items.length) * 100)); }, [finished]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <section className="practice grammar-lesson">
-    <button className="back-button" onClick={onExit}><ArrowLeft size={17} /> Mavzularga qaytish</button>
-    <div className="practice-heading"><div className="practice-kicker">{level} · {topic.uz}</div><h1 lang="en">{topic.title}</h1></div>
+    <button className="back-button" onClick={onExit}><ArrowLeft size={17} /> Headway {book.title} darslariga qaytish</button>
+    <div className="practice-heading"><div className="practice-kicker">HEADWAY {book.title.toUpperCase()} · {lesson.unit ? `UNIT ${lesson.unit}` : `${number}-DARS`} · {topic.uz}</div><h1 lang="en">{topic.title}</h1>{lesson.focus && <p>{lesson.focus}</p>}</div>
     {index < 0 ? <article className="practice-card lesson-card">
       <p>{topic.rule}</p>
       <h3>Tuzilishi</h3><ul className="form-list" lang="en">{topic.form.map(f => <li key={f}>{f}</li>)}</ul>
-      <h3>Misollar</h3><ul className="example-list">{topic.examples.map(e => <li key={e}><span lang="en">{e}</span><button className="icon-button" aria-label="Tinglash" onClick={() => speak(e, 'en', { voice })}><Volume2 size={16} /></button></li>)}</ul>
+      <RepeatAfterMe key={topic.id} sentences={topic.examples} voice={voice} />
       <div className="result-actions"><button className="primary-button" onClick={() => setIndex(0)}>Mashqni boshlash <ArrowRight size={17} /></button>
         {onAskTeacher && <button className="secondary-button" onClick={() => onAskTeacher(`“${topic.title}” mavzusini menga oddiy misollar bilan tushuntirib bering va kichik mashq bering.`)}><MessageCircle size={17} /> 3D ustozdan so‘rash</button>}</div>
     </article> : finished ? <article className="practice-card lesson-card">
       <Trophy size={34} /><h2>{correct} / {items.length} to‘g‘ri</h2><p>{correct / items.length >= 0.8 ? 'Ajoyib! Mavzu o‘zlashtirildi.' : 'Yana bir bor mashq qiling — 80% dan yuqori natija mavzuni yopadi.'}</p>
-      <div className="result-actions"><button className="secondary-button" onClick={() => { setItems(shuffle(topic.items)); setIndex(0); setCorrect(0); }}><RotateCcw size={17} /> Qaytadan</button>
-        <button className="primary-button" disabled={!canGenerate || busy} onClick={more}><Sparkles size={17} /> {busy ? 'Tayyorlanmoqda…' : 'AI: yana 6 ta yangi mashq'}</button></div>
+      <div className="result-actions">{onNext && correct / items.length >= 0.8 && <button className="primary-button" onClick={onNext}>Keyingi dars <ArrowRight size={17} /></button>}
+        <button className="secondary-button" onClick={() => { setItems(shuffle(topic.items)); setIndex(0); setCorrect(0); }}><RotateCcw size={17} /> Qaytadan</button>
+        <button className="secondary-button" disabled={!canGenerate || busy} onClick={more}><Sparkles size={17} /> {busy ? 'Tayyorlanmoqda…' : 'AI: yana 6 ta yangi mashq'}</button></div>
       {!canGenerate && <p className="grading-note">Cheksiz yangi mashqlar uchun serverda OpenAI kaliti kerak.</p>}
       <p role="status">{message}</p>
     </article> : <Exercise key={index + items[index].explanation} item={items[index]} number={index + 1} total={items.length} onAnswer={ok => ok && setCorrect(c => c + 1)} onNext={() => setIndex(index + 1)} />}
@@ -133,11 +157,11 @@ export function Exercise({ item, number, total, onAnswer, onNext, compact }: { i
   </article>;
 }
 
-export function GrammarGame({ id, level, onExit }: { id: GrammarGameId; level: CefrLevel; onExit: () => void }) {
+export function GrammarGame({ id, level, onExit }: { id: GrammarGameId; level: HeadwayLevelId; onExit: () => void }) {
   const meta = grammarGames.find(g => g.id === id)!;
   const kind = id === 'grammar-race' ? null : id === 'grammar-hunter' ? 'fix' : 'order';
   const [gameLevel, setGameLevel] = useState(level);
-  const deck = useMemo(() => shuffle(allItems(gameLevel).filter(it => !kind || it.kind === kind)), [gameLevel, kind]);
+  const deck = useMemo(() => shuffle(levelItems(gameLevel).filter(it => !kind || it.kind === kind)), [gameLevel, kind]);
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -155,8 +179,8 @@ export function GrammarGame({ id, level, onExit }: { id: GrammarGameId; level: C
   return <section className="practice grammar-game">
     <button className="back-button" onClick={onExit}><ArrowLeft size={17} /> O‘yinlarga qaytish</button>
     <div className="practice-heading"><div className="practice-kicker">{meta.icon} GRAMMATIKA O‘YINI</div><h1>{meta.title}</h1><p>{meta.description}</p></div>
-    {!started ? <div className="practice-card"><div className="club-tabs">{cefrLevels.map(l => <button key={l} aria-pressed={gameLevel === l} onClick={() => setGameLevel(l)}>{l}</button>)}</div>
-      <p>Eng yaxshi natija ({gameLevel}): {best}</p><button className="primary-button" onClick={() => setStarted(true)}>Boshlash</button></div> :
+    {!started ? <div className="practice-card"><div className="club-tabs">{headway.map(b => <button key={b.id} aria-pressed={gameLevel === b.id} onClick={() => setGameLevel(b.id)}>{b.title}</button>)}</div>
+      <p>Eng yaxshi natija (Headway {headwayLevel(gameLevel).title}): {best}</p><button className="primary-button" onClick={() => setStarted(true)}>Boshlash</button></div> :
       over ? <div className="practice-card lesson-card"><Trophy size={36} /><h2>{score} ball</h2><p>{score > best ? 'Yangi rekord!' : `Rekord: ${best}`}</p>
         <button className="primary-button" onClick={() => { setIndex(0); setScore(0); setStreak(0); setLeft(60); }}><RotateCcw size={17} /> Yana o‘ynash</button></div> :
       <><div className="game-hud"><span><Trophy size={16} /> {score}</span><span>🔥 {streak}</span>{id === 'grammar-race' ? <span><Timer size={16} /> {left} s</span> : <span>{index + 1} / {Math.min(10, deck.length)}</span>}</div>
