@@ -7,6 +7,7 @@ import type { Recording } from './recorder';
 import { buildSpeakingTest, overallBand } from './questionBank';
 import type { CueCard, Part1Topic } from './questionBank';
 import { estimateBands, wordsPerMinute } from './speakingScore';
+import CountUp from '../../vendor/react-bits/CountUp';
 import type { AnswerEvidence } from './speakingScore';
 
 const Mentor = lazy(() => import('../Mentor'));
@@ -320,7 +321,7 @@ export function SpeakingReportView({ report, answers, ai, message, lang, voice, 
   return <section className="practice exam-report">
     <button className="back-button" onClick={onExit}><ArrowLeft size={17} /> IELTS bo‘limiga qaytish</button>
     <div className="band-hero">
-      <div className="band-circle"><small>Overall</small><strong>{report.overall.toFixed(1)}</strong><small>{ai ? 'AI examiner bahosi' : 'taxminiy'}</small></div>
+      <div className="band-circle"><small>Overall</small><strong><CountUp to={report.overall} decimals={1} duration={1.6} trigger="load" /></strong><small>{ai ? 'AI examiner bahosi' : 'taxminiy'}</small></div>
       <div><h1>Speaking natijasi</h1><p lang={lang}>{report.summary}</p>{message && <p className="grading-note">{message}</p>}
         <p className="grading-note">Bu rasmiy IELTS natijasi emas. Ball ochiq band descriptorlari asosida taxmin qilinadi.</p></div>
     </div>

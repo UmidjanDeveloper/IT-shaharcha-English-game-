@@ -6,6 +6,8 @@ import type { GrammarItem, GrammarTopic } from './curriculum';
 import { headway, headwayLevel, levelItems, topicById } from './headway';
 import type { HeadwayLesson, HeadwayLevel, HeadwayLevelId } from './headway';
 import { RepeatAfterMe } from './RepeatAfterMe';
+import BlurText from '../../vendor/react-bits/BlurText';
+import { RevealGroup, RevealItem } from '../motion/Reveal';
 
 const progressKey = 'shaharcha-grammar-v1';
 type Progress = Record<string, number>;
@@ -46,7 +48,7 @@ export function GrammarCourse({ startLevel = 'beginner', onAskTeacher, onExit }:
 
   return <section className="practice grammar-course">
     {onExit && <button className="back-button" onClick={onExit}><ArrowLeft size={17} /> Orqaga</button>}
-    <div className="practice-heading"><div className="practice-kicker">HEADWAY GRAMMATIKA YO‘LI · BEGINNER → ADVANCED</div><h1>Kitob tartibida grammatika</h1>
+    <div className="practice-heading"><div className="practice-kicker">HEADWAY GRAMMATIKA YO‘LI · BEGINNER → ADVANCED</div><h1><BlurText text="Kitob tartibida grammatika" animateBy="words" delay={90} trigger="load" /></h1>
       <p>Darslar Headway kitoblaridagi grammatika ketma-ketligida. Har bir dars: o‘zbekcha qoida, misollar, “Eshit va takrorla” va mashqlar. Tushuntirish va mashqlar klubimizniki — kitob bilan parallel ishlating.</p></div>
     <div className="book-tabs" role="group" aria-label="Headway darajasi">{headway.map(b => {
       const count = b.lessons.filter(passed).length;
@@ -57,16 +59,16 @@ export function GrammarCourse({ startLevel = 'beginner', onAskTeacher, onExit }:
     <div className="book-head"><div><h2>Headway {book.title} <span>{book.cefr}</span></h2><p>{book.about}</p></div>
       {next >= 0 ? <button className="primary-button" onClick={() => setOpen(next)}>{next === 0 ? 'Boshlash' : 'Davom etish'} · {next + 1}-dars <ArrowRight size={17} /></button>
         : <p className="ok book-done">Daraja tugallandi! Keyingi kitobga o‘ting.</p>}</div>
-    <ol className="book-path">{book.lessons.map((lesson, i) => {
+    <RevealGroup as="ol" key={level} className="book-path" stagger={.04}>{book.lessons.map((lesson, i) => {
       const t = topicById(lesson.topic), score = progress[lesson.topic] ?? 0;
-      return <li key={i} className={`${passed(lesson) ? 'done' : ''} ${i === next ? 'current' : ''}`}>
+      return <RevealItem as="li" key={i} className={`${passed(lesson) ? 'done' : ''} ${i === next ? 'current' : ''}`}>
         <button onClick={() => setOpen(i)}>
           <span className="step-dot" aria-hidden="true">{passed(lesson) ? <Check size={16} /> : i + 1}</span>
           <span className="step-text"><small>{lesson.unit ? `Unit ${lesson.unit}` : `${i + 1}-dars`}{lesson.focus ? ` · ${lesson.focus}` : ''}</small>
             <strong lang="en">{t.title}</strong><em>{t.uz}</em></span>
           <span className="step-score">{score ? `${score}%` : ''}</span>
-        </button></li>;
-    })}</ol>
+        </button></RevealItem>;
+    })}</RevealGroup>
     <p className="grading-note">“Unit” raqami Headway 5-nashr mundarijasi bilan tekshirilgan joylarda ko‘rsatilgan; boshqa darslarda mavzu nomi bo‘yicha toping. Headway — Oxford University Press nashri; bu sayt nashriyot bilan bog‘liq emas.</p>
     <h3 className="club-subtitle">Grammatika o‘yinlari · Headway {book.title}</h3>
     <div className="library-grid">{grammarGames.map(g => <button key={g.id} onClick={() => setGame(g.id)}><span aria-hidden="true">{g.icon}</span><strong>{g.title}</strong><small>{g.description}</small></button>)}</div>

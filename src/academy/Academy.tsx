@@ -17,6 +17,13 @@ import type { LaunchGame } from './Library';
 import type { GameType } from '../types';
 import { Workshop, workshops } from './Workshop';
 import './academy.css';
+import { MotionConfig } from 'motion/react';
+import BlurText from '../vendor/react-bits/BlurText';
+import RotatingText from '../vendor/react-bits/RotatingText';
+import ShinyText from '../vendor/react-bits/ShinyText';
+import Magnet from '../vendor/react-bits/Magnet';
+import CountUp from '../vendor/react-bits/CountUp';
+import { RevealGroup, RevealItem, Tilt } from './motion/Reveal';
 import { MockHistory } from './MockHistory';
 import { AiTeacher, askTeacher, openClassroom } from './AiTeacher';
 import { ClassLockButton, useClassLock } from './ClassLock';
@@ -132,6 +139,7 @@ export default function Academy() {
     requestAnimationFrame(()=>activitiesSection.current?.scrollIntoView());
   }
   return (
+    <MotionConfig reducedMotion="user">
     <div className={`academy ${board ? 'academy-board' : ''}`}>
       <header className="academy-header">
         <div className="academy-top">
@@ -152,7 +160,7 @@ export default function Academy() {
             <button className="board-button" aria-label="Doska rejimi" aria-pressed={board} onClick={() => setBoard(!board)}>
               {board ? <Minimize2 size={17} /> : <Maximize2 size={17} />} <span>Doska</span>
             </button>
-            <button className="xp-pill" onClick={() => navigate('progress')} aria-label={`Natijalar, ${xp} XP`}><Zap size={16} fill="currentColor" /> {xp} XP</button>
+            <button className="xp-pill" onClick={() => navigate('progress')} aria-label={`Natijalar, ${xp} XP`}><Zap size={16} fill="currentColor" /> <CountUp to={xp} duration={1.2} trigger="load" /> XP</button>
           </div>
         </div>
       </header>
@@ -202,10 +210,12 @@ export default function Academy() {
                 else if (section === 'speaking') { if (level === 'ielts') official(); else openExercise('speaking'); }
                 else openClassroom();
               }}>
-                <div className="atelier-copy"><span>IT SHAHARCHA &nbsp; / &nbsp; XATIRCHI</span>
-                  <h1>Til rasadxonasi</h1>
-                  <p>Ustoz bilan suhbatlashing yoki mashq uchun bo‘lim tanlang.</p>
-                  <div><button className="world-primary" onClick={openActivities}>Darsni boshlash <ArrowDown size={17}/></button>
+                <div className="world-copy"><span><ShinyText text="IT SHAHARCHA · ENGLISH ACADEMY" color="#8ff8ea" shineColor="#ffffff" speed={3} /></span>
+                  <h1><BlurText text="Ingliz tili —" animateBy="words" delay={120} trigger="load" className="hero-blur" />
+                    <RotatingText texts={['yangi darajada', 'Headway bilan', 'IELTS uchun', '3D ustoz bilan']} effect="slide" rotationInterval={2600}
+                      staggerDuration={.02} staggerFrom="last" mainClassName="hero-rotate" splitLevelClassName="hero-rotate-split" /></h1>
+                  <p>Motion-capture bilan harakatlanadigan 3D ustoz, haqiqiy IELTS formati va Headway bo‘yicha grammatika. Panelni tanlang yoki ustozga savol bering.</p>
+                  <div><Magnet padding={60} magnetStrength={4}><button className="world-primary" onClick={openActivities}>Darsni boshlash <ArrowDown size={17}/></button></Magnet>
                   <button className="world-ghost" onClick={openClassroom}>Ustoz bilan gaplashish</button></div>
                 </div>
               </World3D>
@@ -213,7 +223,7 @@ export default function Academy() {
 
             <section className="academy-section" ref={activitiesSection} tabIndex={-1} aria-labelledby="activity-title">
               <div className="section-head">
-                <div><h2 id="activity-title">Darajangizni tanlang</h2><p>{selectedLevel.tag}</p></div>
+                <div><h2 id="activity-title"><BlurText text="Darajangizni tanlang" animateBy="words" delay={80} /></h2><p>{selectedLevel.tag}</p></div>
                 <div className="level-selector" ref={levelsSection} tabIndex={-1} aria-label="Darajani tanlang" role="group">
                   {levels.map(item => (
                     <button key={item.id} className={item.color} onClick={() => setLevel(item.id)} aria-pressed={item.id === level}>
@@ -226,16 +236,16 @@ export default function Academy() {
               <LearningPath key={level} beginner={level === 'beginner'} onGrammar={openGrammar}
                 onOpen={target => target === 'games' ? showLibrary() : openExercise(target)}/>
               <h3 className="club-subtitle">Shaharcha mashqlari</h3>
-              <div className="level-grid activity-grid">
+              <RevealGroup className="level-grid activity-grid">
                 {activities.map(item => (
-                  <button key={item.id} className={`activity-card ${item.color}`} onClick={() => openExercise(item.id)}>
+                  <RevealItem key={item.id}><Tilt max={7}><button className={`activity-card ${item.color}`} onClick={() => openExercise(item.id)}>
                     <span className="activity-top"><span className="tile-icon"><item.icon size={24} /></span><span className="tile-tag">{item.label}</span></span>
                     <span className="activity-text"><strong>{item.title}</strong><span>{item.detail}</span></span>
                     <span className="activity-go" aria-hidden="true"><ArrowUpRight size={20} /></span>
                     <item.icon className="activity-watermark" size={144} strokeWidth={1} aria-hidden="true" />
-                  </button>
+                  </button></Tilt></RevealItem>
                 ))}
-              </div></>}
+              </RevealGroup></>}
             </section>
             <Library onStart={game=>{setLaunched(game);setScreen('legacy');window.scrollTo(0,0);}}/>
           </>
@@ -262,6 +272,7 @@ export default function Academy() {
 
       </footer>
     </div>
+    </MotionConfig>
   );
 }
 

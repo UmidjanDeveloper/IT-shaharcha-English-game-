@@ -7,6 +7,8 @@ import type { CueCard, Part1Topic } from './ielts/questionBank';
 import type { ExamPlan } from './ielts/SpeakingExam';
 import { readSpeakingHistory } from './ielts/SpeakingExam';
 import { Credits } from './Credits';
+import BlurText from '../vendor/react-bits/BlurText';
+import { RevealGroup, RevealItem } from './motion/Reveal';
 
 const SpeakingExam = lazy(() => import('./ielts/SpeakingExam').then(m => ({ default: m.SpeakingExam })));
 const WritingExam = lazy(() => import('./ielts/WritingExam').then(m => ({ default: m.WritingExam })));
@@ -67,7 +69,7 @@ export function OfficialIELTS() {
   return <section className="official-hub ielts-centre">
     <div className="ielts-hero">
       <div className="coach-stage"><Suspense fallback="Examiner yuklanmoqda…"><Mentor pose="idle" /></Suspense></div>
-      <div><span className="tile-tag">IELTS MARKAZI</span><h2>Haqiqiy imtihon formatida tayyorlaning</h2>
+      <div><span className="tile-tag">IELTS MARKAZI</span><h2><BlurText text="Haqiqiy imtihon formatida tayyorlaning" animateBy="words" delay={70} trigger="load" /></h2>
         <p>3D examiner bilan to‘liq Speaking imtihoni (Part 1–2–3), band ball va har bir javob tahlili. Writing Task 1/2 uchun AI examiner bahosi. Savollar 2025–2026 yillarda imtihonda tushgani haqida nomzodlar xabar bergan mavzular asosida tuzilgan.</p>
         <button className="primary-button" onClick={() => setOpen({ kind: 'speaking', plan: { mode: 'full' }, title: 'To‘liq Speaking imtihoni' })}><Mic size={17} /> To‘liq Speaking imtihoni (11–14 daqiqa)</button>
       </div>
@@ -77,8 +79,8 @@ export function OfficialIELTS() {
 
     {tab === 'speaking' && <>
       <h3 className="club-subtitle">Part 1 · Intervyu (mavzu tanlang)</h3>
-      <div className="topic-grid">{[...openingTopics, ...part1Topics].map(t => <button key={t.topic} onClick={() => setOpen({ kind: 'speaking', plan: { mode: 'part1', topics: [t] }, title: 'Part 1 · ' + t.topic })}>
-        <strong>{t.topic}</strong><small>{t.questions.length} savol</small></button>)}</div>
+      <RevealGroup className="topic-grid" stagger={.025}>{[...openingTopics, ...part1Topics].map(t => <RevealItem key={t.topic}><button onClick={() => setOpen({ kind: 'speaking', plan: { mode: 'part1', topics: [t] }, title: 'Part 1 · ' + t.topic })}>
+        <strong>{t.topic}</strong><small>{t.questions.length} savol</small></button></RevealItem>)}</RevealGroup>
       <h3 className="club-subtitle">Part 2 · Cue card + Part 3 muhokama</h3>
       <div className="topic-grid cards">{cueCards.map(c => <article key={c.topic} className="cue-mini"><strong lang="en">{c.prompt}</strong>
         <div><button className="secondary-button" onClick={() => setOpen({ kind: 'speaking', plan: { mode: 'part2', card: c }, title: 'Part 2 · ' + c.topic })}>Part 2</button>

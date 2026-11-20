@@ -48,10 +48,17 @@ chrome --kiosk --app=https://sizning-saytingiz.uz
 
 Windows’da: Settings → Accounts → Other users → *Set up a kiosk (Assigned access)*.
 
-## Til rasadxonasi
+## 3D ustoz va 3D studiya
 
-Bosh sahifa, 3D sinf va IELTS imtihoni bitta hajmli ustoz modelidan foydalanadi. Model oltita to‘qimali sirtdan va 22 suyakdan tuzilgan. AI4AnimationPy Cranberry harakatlari kutish, tinglash va tushuntirish holatlari uchun GLB ichiga joylangan.
+- **Ustoz:** klub instruktori (`public/teacher/instructor.glb`, egasining rasmi asosida). Tanasi [AI4AnimationPy](https://github.com/facebookresearch/ai4animationpy) dagi motion-capture bilan harakatlanadi (kutish, tushuntirish, tinglash). Ustiga: ko‘z qisish, ovozga mos lab harakati, tomoshabinga qarash, qo‘l silkitish va doskaga ishora (`src/academy/three/coach.ts`).
+- **Bosh sahifa:** to‘q studiya, girih naqshli pol, yorug‘lik devori, ustoz projektor nurida, bo‘limlar shisha panellarda; panel bosilsa kamera unga uchadi.
+- **3D sinf:** ustoz gologramma doska yonida, javob doskaga yoziladi va ustoz doskaga ishora qiladi.
+- **Animatsiyalar:** React Bits komponentlari (BlurText, RotatingText, ShinyText, CountUp, Magnet — `src/vendor/react-bits`), skrollda chiqib keluvchi bo‘limlar va kursorga qarab qiyshayuvchi kartalar (`src/academy/motion/Reveal.tsx`, 3D portfolio uslubidan ilhomlangan).
+- Kuchsiz kompyuterlarda effektlar avtomatik kamayadi, ko‘rinmay turgan 3D oynalar to‘xtatiladi.
 
-Rasadxonada kamerani sichqoncha, sensorli ekran yoki aylantirish tugmalari bilan boshqarish mumkin. Globus IELTS bo‘limini, ustoz esa suhbatni ochadi. WebGL mavjud bo‘lmasa, rasadxonaning oldindan chizilgan ko‘rinishi va bo‘lim tugmalari ishlaydi.
+## Litsenziyalar
 
-Model `public/teacher/instructor.glb` faylida. Manbalar va litsenziyalar `public/mentor/CREDITS.txt` faylida keltirilgan. AI4AnimationPy harakatlari CC BY-NC 4.0 litsenziyasi bilan tarqatiladi.
+- Harakatlar: AI4AnimationPy (Meta), CC BY-NC 4.0 — faqat notijorat foydalanish.
+- Ustoz yuzi: MediaPipe canonical face (Apache 2.0).
+- Animatsiya komponentlari: React Bits, MIT + Commons Clause.
+- Batafsil: `public/mentor/CREDITS.txt`.

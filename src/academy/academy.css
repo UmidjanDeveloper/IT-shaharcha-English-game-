@@ -675,81 +675,22 @@
 .repeat-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 .repeat-actions b { padding: 4px 9px; border-radius: 99px; font-size: 13px; }
 .repeat-actions .mic.on { background: #e5484d; color: #fff; border-color: #e5484d; }
-.atelier-home {border-radius:22px;overflow:hidden;background:#192720;color:#fbf8ec;box-shadow:0 18px 48px #24221924}
-.atelier-cover {position:relative;isolation:isolate;min-height:clamp(410px,45vw,625px);display:flex;align-items:center}
-.atelier-cover::after {content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,#15211df5 0%,#1b261fdf 24%,#1b221b9c 42%,transparent 70%)}
-.portrait-stage {position:relative;overflow:hidden;background:#504638 url('/teacher/atelier.webp') center/cover;isolation:isolate}
-.portrait-stage img {display:block;position:absolute;height:106%;width:auto;max-width:none;top:1%;left:50%;transform:translateX(-50%);object-fit:contain}
-.portrait-stage canvas {position:absolute;inset:0;width:100%;height:100%;opacity:0}
-.portrait-stage.is-ready canvas {opacity:1}
-.portrait-stage.is-ready img {visibility:hidden}
-.atelier-cover .portrait-cover {position:absolute;inset:0;height:100%;width:100%;z-index:-2}
-.portrait-cover img {left:74%}
-.atelier-copy {padding:clamp(28px,5vw,84px);max-width:54%;color:#fffaf0}
-.atelier-copy>span {display:block;font:700 11px/1.3 system-ui;letter-spacing:.21em;color:#f3d39e}
-.atelier-copy h1 {font-family:Georgia,'Times New Roman',serif;font-size:clamp(56px,6.6vw,108px);font-weight:400;letter-spacing:-.067em;line-height:.91;color:inherit;margin:24px 0}
-.atelier-copy em {color:#eed5a9;font-weight:400}
-.atelier-copy p {font-size:clamp(15px,1.25vw,19px);line-height:1.55;max-width:36ch;color:#f1eae0}
-.atelier-copy>div {display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
-.atelier-copy .world-primary,.atelier-copy .world-ghost {min-height:46px;border-radius:8px;font-size:14px}
-.atelier-copy .world-primary {background:#f6e6c6;color:#1b271f}
-.atelier-copy .world-ghost {background:#1a2821aa;color:#fffaf0;border:1px solid #d8cbb572}
-.atelier-rooms {display:grid;grid-template-columns:repeat(4,1fr);background:#f6f2e9;padding:0 12px}
-.atelier-rooms button {color:#293930;display:flex;align-items:center;gap:10px;text-align:left;font-weight:650;padding:20px clamp(8px,1.8vw,28px);border:0;border-right:1px solid #dcd8cb;background:none}
-.atelier-rooms button:last-child {border:0}
-.atelier-rooms button:hover,.atelier-rooms button:focus-visible {background:#eae3d5}
-.atelier-rooms button svg:first-child {color:#79613e}
-.atelier-rooms button svg:last-child {margin-left:auto}
-.atelier-class {background:#302e24 url('/teacher/atelier.webp') center/cover;display:grid;align-items:end}
-.atelier-instructor {position:absolute;left:0;bottom:0;width:54%;height:92%;overflow:hidden;mask-image:linear-gradient(90deg,#000 86%,transparent)}
-.atelier-instructor .portrait-stage {width:100%;height:100%}
-.atelier-board {position:absolute;inset:12% 4% auto 55%;max-height:45%;overflow:auto;padding:clamp(16px,2.7vw,44px);background:#f8f2e5;color:#23382f;border-radius:8px;box-shadow:0 14px 42px #20190e44}
-.atelier-board h2 {font:500 clamp(20px,2.4vw,36px)/1.12 Georgia,serif;margin:0 0 10px}
-.atelier-board p {white-space:pre-wrap;line-height:1.5}
-.atelier-class .classroom-chat {background:#1e3028ee}
-.academy-main:has(.exam-room,.exam-report,.writing-task,.grammar-game) .atelier-home {display:none}
-@media(max-width:680px){
- .atelier-cover {display:block;padding-top:245px;background:#1b2821}
- .atelier-cover .portrait-cover {height:300px}
- .portrait-cover img {left:50%}
- .atelier-cover::after {background:linear-gradient(0deg,#1b2821 0%,#1b2821 4%,transparent 36%);top:0;height:302px}
- .atelier-copy {max-width:none;padding:8px 24px 24px}
- .atelier-copy h1 {font-size:49px;margin:12px 0}.atelier-copy h1 br {display:none}.atelier-copy h1 em:before {content:' '}
- .atelier-copy p {font-size:14px;margin:0}.atelier-copy>div {margin-top:15px}
- .atelier-rooms {grid-template-columns:1fr 1fr;padding:3px 8px}.atelier-rooms button {padding:14px 8px;font-size:14px}.atelier-rooms button:nth-child(even){border-right:0}
- .atelier-instructor {width:100%;height:43%;top:0;mask-image:none}.atelier-board {inset:43% 12px auto;max-height:19%;padding:12px 16px}
-}
 
-/* The observatory is framed as a navigable stage, with the learning controls outside the canvas. */
-.atelier-home {background:#10212b;border:1px solid #293f48;border-radius:18px}
-.atelier-cover {display:flex;flex-direction:column-reverse;align-items:stretch;min-height:0;padding:0}
-.atelier-cover::after {display:none}
-.atelier-copy {display:grid;grid-template-columns:1fr auto;align-items:center;max-width:none;padding:20px clamp(18px,3.5vw,46px);background:#142833}
-.atelier-copy>span {grid-column:1;letter-spacing:.23em;font-size:10px}
-.atelier-copy h1 {font:500 clamp(34px,3.9vw,60px)/1 Georgia,serif;letter-spacing:-.052em;margin:6px 0;color:#fff3db}
-.atelier-copy p {margin:0;font-size:14px;max-width:52ch;color:#d0d7d3}
-.atelier-copy>div {grid-column:2;grid-row:1/4;margin:0;align-self:center}
-.observatory-stage {position:relative;isolation:isolate;overflow:hidden;background:#203743;display:block}
-.observatory-stage canvas,.observatory-poster {display:block;position:absolute;inset:0;width:100%;height:100%}
-.observatory-cover {width:100%;height:clamp(370px,41vw,610px)}
-.observatory-poster {background:#263b46 url('/teacher/observatory-preview.webp') center/cover}
-.camera-bar,.scene-help {position:absolute;z-index:1;bottom:14px;display:flex;align-items:center;color:#fff9e7;border:1px solid #c2beb357;border-radius:9px;background:#13242deb;font:600 13px/1.15 system-ui}
-.camera-bar {right:14px;padding:2px}
-.camera-bar button {display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:40px;padding:6px 9px;background:transparent;border:0;border-radius:6px;color:inherit;font:inherit;cursor:pointer}
-.camera-bar button:hover,.camera-bar button:focus-visible {background:#3e535c}
-.scene-help {left:14px;padding:10px 12px;pointer-events:none}
-.atelier-class {background:#203743}
-.atelier-instructor {width:100%;inset:0;height:100%;mask-image:none}
-.atelier-instructor .observatory-stage {height:100%;width:100%}
-.atelier-class .camera-bar {left:12px;right:auto}
-.atelier-class .atelier-board {max-height:41%;inset:10% 2% auto 70%;padding:18px}
-@media(max-width:760px){
- .atelier-copy {display:block;padding:16px 18px}
- .atelier-copy>div {margin-top:12px}
- .observatory-cover {height:380px}
- .atelier-class .atelier-board {inset:8% 12px auto;max-height:17%;font-size:13px}
- .atelier-class .atelier-board h2 {font-size:17px}
- .atelier-class .camera-bar {bottom:35vh}
- .scene-help {top:8px;left:8px;bottom:auto;font-size:10px}
- .camera-bar {bottom:8px;right:8px}
-}
+
+/* ===== Motion: tilt cards, hero text, reveal grids ===== */
+.tilt { position: relative; height: 100%; border-radius: 20px; transform-style: preserve-3d; will-change: transform; }
+.tilt > button { width: 100%; height: 100%; }
+.tilt-glare { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; mix-blend-mode: soft-light; }
+.activity-grid > div { min-width: 0; }
+.library-grid > div > button, .topic-grid > div > button { width: 100%; height: 100%; }
+.library-grid > div > button { display: grid; align-content: start; text-align: left; gap: 5px; background: white; border: 1px solid #dcded7; border-radius: 14px; padding: 15px; transition: transform .2s, box-shadow .2s, border-color .2s; }
+.library-grid > div > button:hover { border-color: #4a7656; background: #f3f8ed; transform: translateY(-3px); box-shadow: 0 12px 24px -16px rgb(20 40 30 / .5); }
+.topic-grid > div > button { display: grid; align-content: start; gap: 7px; text-align: left; padding: 14px; border-radius: 14px; border: 1px solid var(--line); background: #fff; transition: transform .2s, border-color .2s; }
+.topic-grid > div > button:hover { border-color: #b79cf0; background: #faf6ff; transform: translateY(-3px); }
+.world-copy h1 { display: grid; gap: 4px; }
+.hero-blur { justify-content: flex-start; }
+.hero-rotate { display: inline-flex; overflow: hidden; color: #8ff8ea; padding-bottom: .08em; }
+.hero-rotate-split { overflow: hidden; }
+.activity-card { transition: box-shadow .25s; }
+.tilt:hover .activity-card { box-shadow: 0 20px 40px -24px rgb(20 12 40 / .55); }
+@media (prefers-reduced-motion: reduce) { .tilt { transform: none !important; } }
