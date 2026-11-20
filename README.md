@@ -1,31 +1,49 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# IT Shaharcha · English Club
 
-# Run and deploy your AI Studio app
+Ingliz tili klubi uchun sayt: A1 dan C1 gacha grammatika kursi, 75+ interaktiv o‘yin, IELTS markazi (3D examiner bilan to‘liq Speaking imtihoni, Writing Task 1/2 band bahosi) va har sahifada ochiladigan 3D AI ustoz (o‘zbekcha va inglizcha).
 
-This contains everything you need to run your app locally.
+## Ishga tushirish
 
-View your app in AI Studio: https://ai.studio/apps/eb4626ce-b410-44c1-81e2-b23804942068
+```bash
+npm ci
+npm run dev      # http://localhost:3000
+npm test
+npm run build
+```
 
-## Run Locally
+## AI va ovoz kalitlari
 
-**Prerequisites:**  Node.js
+`.env.example` dan nusxa olib `.env.local` yarating (yoki Vercel’da Environment Variables). Kalitlar faqat serverda turadi: brauzer `/api/tutor` va `/api/transcribe` ga murojaat qiladi.
 
-
-1. Install dependencies with `npm ci`.
-2. Start the app with `npm run dev`.
-
-### Optional AI tutor and voice
-
-Speaking Studio and mini-mock Writing can request feedback in Uzbek or English. Set the server variables below in a local `.env.local` or in the project's Vercel Environment Variables. Restart the dev server or redeploy after changing them.
-
-| Variable | Purpose |
+| O‘zgaruvchi | Vazifasi |
 | --- | --- |
-| `OPENAI_API_KEY` | Enables feedback through the OpenAI Responses API |
-| `OPENAI_MODEL` | Defaults to `gpt-4o-mini` |
-| `ELEVENLABS_API_KEY` | Enables ElevenLabs speech with a configured voice |
-| `ELEVENLABS_VOICE_ID` | Voice from your ElevenLabs account |
-| `ELEVENLABS_MODEL` | Defaults to `eleven_v3`. Language availability depends on the model and voice |
+| `OPENAI_API_KEY` | AI ustoz, Speaking/Writing band baholash, Part 3 examiner savollari, cheksiz grammatika mashqlari, internetdan yangi IELTS savollari, nutqni matnga aylantirish |
+| `OPENAI_MODEL` | Ixtiyoriy. Bo‘sh bo‘lsa `gpt-5.4-mini → gpt-5-mini → gpt-4o-mini` ketma-ket sinaladi |
+| `OPENAI_TRANSCRIBE_MODEL` | Ixtiyoriy. Standart `gpt-4o-mini-transcribe`, keyin `whisper-1` |
+| `ELEVENLABS_API_KEY` | Examiner va ustoz ovozi |
+| `ELEVENLABS_VOICE_ID_EN` / `_UZ` | Inglizcha va o‘zbekcha ovoz ID. Standart: ElevenLabs premade ovozlari |
+| `ELEVENLABS_MODEL_EN` / `_UZ` | Standart `eleven_multilingual_v2` va `eleven_v3` |
+| `CLUB_ACCESS_CODE` | Ixtiyoriy: begonalar API balansingizni ishlatmasligi uchun kod |
+| `TUTOR_RATE_LIMIT` | Bir IP uchun daqiqasiga so‘rovlar (standart 90; butun sinf bitta IP’da bo‘ladi) |
 
-Keep these credentials server-side. The browser calls `/api/tutor`. Vercel serves this as a function, and the local Vite server serves the same handler. A static-only host needs an equivalent server endpoint. Feedback sends the selected exercise and written answer on request. Playback sends the chosen text to ElevenLabs. The built-in exercises also work without provider credentials.
+**Tekshirish:** deploydan keyin `/api/tutor?check=1` ni oching. U kalitlarni ko‘rsatmaydi, faqat qaysi OpenAI modeli ishlashini, ElevenLabs ovozlari topilganini va qaysi ElevenLabs modellari o‘zbek tilini qo‘llashini ko‘rsatadi (`uzbekModels`). Agar `uzbekSupported: false` bo‘lsa, `ELEVENLABS_MODEL_UZ` ni ro‘yxatdagi modelga o‘zgartiring.
+
+Kalitsiz ham sayt to‘liq ishlaydi: brauzer ovozi, oflayn grammatika ustozi va taxminiy Speaking bahosi bilan.
+
+## IELTS savollari haqida
+
+IELTS jonli imtihon savollarini rasman e’lon qilmaydi. Savollar banki 2025–2026 yillarda imtihonda tushgani haqida nomzodlar xabar bergan mavzular asosida, imtihon uslubida yozilgan. “Yangi tushgan savollar” tugmasi OpenAI web search orqali so‘nggi 12 oyda nomzodlar xabar bergan savollarni topib, sayt ichida ko‘rsatadi (kuniga bir marta keshlanadi).
+
+## Sinf qulfi
+
+Yuqoridagi **Sinf qulfi** tugmasi saytni to‘liq ekranga o‘tkazadi, tashqi havolalar, “orqaga” tugmasi va tabni yopishni bloklaydi; chiqish faqat o‘qituvchi PIN kodi bilan. Brauzer imkoniyatlari cheklangan, shuning uchun to‘liq qulf uchun kompyuterlarda kiosk rejimidan foydalaning:
+
+```bash
+chrome --kiosk --app=https://sizning-saytingiz.uz
+```
+
+Windows’da: Settings → Accounts → Other users → *Set up a kiosk (Assigned access)*.
+
+## 3D ustoz
+
+Geno modeli va harakatlari [AI4AnimationPy](https://github.com/facebookresearch/ai4animationpy) (Meta) loyihasidan, CC BY-NC 4.0 litsenziyasi — faqat notijorat foydalanish. Ustoz gapirganda bosh va qo‘l harakatlari ovoz balandligiga moslashadi.

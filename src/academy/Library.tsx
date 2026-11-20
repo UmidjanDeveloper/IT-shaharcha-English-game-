@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { ALL_GAMES } from './gameCatalog';
 import { workshops } from './Workshop';
+import { grammarGames } from './grammar/GrammarCourse';
 import { Search } from 'lucide-react';
 import type { GameMode } from '../types';
 
 export type LaunchGame = {id:string;title:string};
 const catalog = [
   ...ALL_GAMES.map(g=>({...g,title:g.title.replace(/[\p{Extended_Pictographic}\uFE0F\u2B50]/gu,'').trim()})),
+  ...grammarGames.map(g=>({...g,mode:'solo' as GameMode})),
   ...workshops.map(g=>({...g,mode:'solo' as GameMode,icon:'✦'}))
 ];
 export function Library({onStart}:{onStart:(g:LaunchGame)=>void}) {

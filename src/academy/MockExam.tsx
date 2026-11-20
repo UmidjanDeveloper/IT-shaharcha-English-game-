@@ -9,6 +9,7 @@ import { speakingPrompts, analyseSpeaking } from './speaking';
 import { mockSections as sections, saveAttempt } from './mockHistory';
 import type { MockAttempt, MockResult } from './mockHistory';
 import { ResultDetails } from './MockHistory';
+import { Credits } from './Credits';
 
 const Mentor = lazy(() => import('./Mentor'));
 
@@ -38,7 +39,6 @@ export function MockExam({ level, onExit, award }: { level: Level; onExit: () =>
   const [answers, setAnswers] = useState<string[]>([]);
   const [notes, setNotes] = useState<string[]>([]);
   const [spoken, setSpoken] = useState('');
-  const [review, setReview] = useState(false);
   const [attempt, setAttempt] = useState<MockAttempt | null>(null);
   const [saveState, setSaveState] = useState<'new' | 'saved' | 'error'>('new');
   function persist() {
@@ -118,9 +118,8 @@ export function MockExam({ level, onExit, award }: { level: Level; onExit: () =>
       <p className="grading-note">Bu brauzerda oxirgi 10 ta saqlangan sinov ko‘rinadi. Umumiy doskada natijani keyingi o‘quvchi ham ko‘ra oladi.</p>
       <button className="primary-button" disabled={saveState === 'saved'} onClick={persist}>{saveState === 'saved' ? 'Natija saqlandi' : 'Natijani saqlash'}</button>
       {saveState === 'error' && <p role="status">Brauzer natijani saqlay olmadi. Hisobotni shu sahifada ko‘rishingiz mumkin.</p>}
-      <button className="secondary-button" onClick={()=>setReview(!review)}>Rasmiy IELTS namunalari</button>
-      {review && <p><a className="speaking-source" href="https://ielts.org/take-a-test/preparation-resources/sample-test-questions/academic-test" target="_blank" rel="noreferrer">IELTS Academic sample test questions ↗</a></p>}</div>}
-    <p className="grading-note">Mini-mock original o‘quv topshiriqlaridan tuzilgan. Ballar mashq mezonlarini bildiradi. <a href="https://ielts.org/take-a-test/preparation-resources/sample-test-questions/academic-test" target="_blank" rel="noreferrer"><u>Rasmiy IELTS Academic namunalari ↗</u></a></p>
-    <a className="speaking-source" href="/mentor/CREDITS.txt" target="_blank" rel="noreferrer">3D harakat manbasi va litsenziya</a>
+      </div>}
+    <p className="grading-note">Mini-mock original o‘quv topshiriqlaridan tuzilgan. Ballar mashq mezonlarini bildiradi. To‘liq Speaking va Writing imtihoni IELTS bo‘limida.</p>
+    <Credits />
   </section>;
 }

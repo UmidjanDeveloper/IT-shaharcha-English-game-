@@ -433,6 +433,7 @@ export default function DubbingGame({ onBack }: { onBack: () => void }) {
         <iframe ref={iframeRef} src={ytSrc}
           className="absolute inset-0 w-full h-full"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          sandbox="allow-scripts allow-same-origin allow-presentation"
           allowFullScreen title={scene.title}
         />
       </div>
@@ -598,6 +599,7 @@ export default function DubbingGame({ onBack }: { onBack: () => void }) {
         <iframe ref={iframeRef} src={ytSrc}
           className="absolute inset-0 w-full h-full"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          sandbox="allow-scripts allow-same-origin allow-presentation"
           allowFullScreen title={scene.title}
         />
         {/* Score badge overlay */}

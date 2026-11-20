@@ -18,11 +18,17 @@ import type { GameType } from '../types';
 import { Workshop, workshops } from './Workshop';
 import './academy.css';
 import { MockHistory } from './MockHistory';
+import { AiTeacher, askTeacher } from './AiTeacher';
+import { ClassLockButton, useClassLock } from './ClassLock';
+import type { CefrLevel } from './grammar/curriculum';
+import type { GrammarGameId } from './grammar/GrammarCourse';
 
 const OfficialIELTS = lazy(()=>import('./OfficialStudio').then(m=>({ default:m.OfficialIELTS })));
 const MockExam = lazy(() => import('./MockExam').then(m => ({ default: m.MockExam })));
 const BoardArena = lazy(() => import('./BoardArena').then(m => ({ default: m.BoardArena })));
 const ClassicGames = lazy(() => import('../App'));
+const GrammarCourse = lazy(() => import('./grammar/GrammarCourse').then(m => ({ default: m.GrammarCourse })));
+const GrammarGame = lazy(() => import('./grammar/GrammarCourse').then(m => ({ default: m.GrammarGame })));
 
 const levels = [
   { id: 'beginner', title: 'Boshlang‘ich', range: 'A1–A2', tag: 'Sodda gaplar va kundalik so‘zlar', color: 'mint' },
@@ -41,7 +47,7 @@ const activities = [
 ] as const;
 
 type Activity = typeof activities[number]['id'];
-type Screen = 'home' | 'progress' | 'legacy';
+type Screen = 'home' | 'progress' | 'legacy' | 'grammar';
 type Awards = Record<string, number>;
 
 const storageKey = 'it-shaharcha-academy-xp-v1';
@@ -69,6 +75,8 @@ export default function Academy() {
   const [board, setBoard] = useState(false);
   const [dailyRound, setDailyRound] = useState<number | null>(null);
   const [awards, setAwards] = useState(loadAwards);
+  const [grammarLevel, setGrammarLevel] = useState<CefrLevel>('A1');
+  const lock = useClassLock();
   const levelsSection = useRef<HTMLDivElement>(null);
   const activitiesSection = useRef<HTMLElement>(null);
   const main = useRef<HTMLElement>(null);
@@ -113,6 +121,10 @@ export default function Academy() {
     navigate('home');
     requestAnimationFrame(()=>document.getElementById('club-library')?.scrollIntoView());
   }
+  function openGrammar(next: CefrLevel = level === 'beginner' ? 'A1' : level === 'intermediate' ? 'B1' : 'B2') {
+    setGrammarLevel(next);
+    navigate('grammar');
+  }
   function official() {
     navigate('home'); setLevel('ielts');
     requestAnimationFrame(()=>activitiesSection.current?.scrollIntoView());
@@ -128,11 +140,13 @@ export default function Academy() {
           <nav className="academy-nav" aria-label="Asosiy menyu">
             <button aria-current={screen === 'home' && !activity ? 'page' : undefined} onClick={() => navigate('home')}>Bosh sahifa</button>
             <button aria-current={activity ? 'page' : undefined} onClick={openActivities}>Mashqlar</button>
+            <button aria-current={screen === 'grammar' ? 'page' : undefined} onClick={() => openGrammar()}>Grammatika</button>
             <button onClick={showLibrary}>O‘yinlar</button>
             <button onClick={official}>IELTS</button>
             <button aria-current={screen === 'progress' ? 'page' : undefined} onClick={() => navigate('progress')}>Natijalar</button>
           </nav>
           <div className="academy-tools">
+            <ClassLockButton lock={lock} />
             <button className="board-button" aria-label="Doska rejimi" aria-pressed={board} onClick={() => setBoard(!board)}>
               {board ? <Minimize2 size={17} /> : <Maximize2 size={17} />} <span>Doska</span>
             </button>
@@ -142,7 +156,9 @@ export default function Academy() {
       </header>
 
       <main className={`academy-main ${screen === 'legacy' ? 'academy-legacy' : ''}`} ref={main} tabIndex={-1}>
-        {screen === 'legacy' && launched && (workshop ?
+        {screen === 'grammar' && <Suspense fallback="Grammatika yuklanmoqda…"><GrammarCourse key={grammarLevel} startLevel={grammarLevel} onAskTeacher={askTeacher} onExit={() => navigate('home')} /></Suspense>}
+        {screen === 'legacy' && launched?.id.startsWith('grammar-') && <Suspense fallback="O‘yin yuklanmoqda…"><GrammarGame id={launched.id as GrammarGameId} level={level === 'beginner' ? 'A1' : level === 'intermediate' ? 'B1' : 'B2'} onExit={showLibrary} /></Suspense>}
+        {screen === 'legacy' && launched && !launched.id.startsWith('grammar-') && (workshop ?
           <Workshop game={workshop} onExit={showLibrary}/> :
           <><button className="back-button archive-back" onClick={showLibrary}>← O‘yinlarga qaytish</button>
           <Suspense fallback="O‘yin yuklanmoqda…"><ClassicGames key={launched.id}
@@ -197,7 +213,8 @@ export default function Academy() {
                 </div>
               </div>
               {level === 'ielts' ? <Suspense fallback="Rasmiy mashqlar yuklanmoqda…"><OfficialIELTS/></Suspense> : <>
-              <LearningPath key={level} beginner={level === 'beginner'}/>
+              <LearningPath key={level} beginner={level === 'beginner'} onGrammar={openGrammar}
+                onOpen={target => target === 'games' ? showLibrary() : openExercise(target)}/>
               <h3 className="club-subtitle">Shaharcha mashqlari</h3>
               <div className="level-grid activity-grid">
                 {activities.map(item => (
@@ -229,6 +246,7 @@ export default function Academy() {
         )}
       </main>
 
+      <AiTeacher level={level} />
       <footer className="academy-footer">
         <span><Sparkles size={15} /> IT Shaharcha · Xatirchi</span>
 

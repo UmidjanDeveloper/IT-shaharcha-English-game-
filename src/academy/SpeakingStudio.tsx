@@ -1,8 +1,9 @@
 import { TutorFeedback } from './TutorFeedback';
-import { ArrowLeft, ArrowUpRight, Check, Headphones, Mic, RotateCcw, Square, Timer } from 'lucide-react';
+import { ArrowLeft, Check, Headphones, Mic, RotateCcw, Square, Timer } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { Level } from './lessons';
 import { analyseSpeaking, speakingPrompts } from './speaking';
+import { Credits } from './Credits';
 
 type RecognitionWindow = Window & {
   SpeechRecognition?: typeof SpeechRecognition;
@@ -11,7 +12,6 @@ type RecognitionWindow = Window & {
 
 const Mentor = lazy(() => import('./Mentor'));
 
-const council = 'https://takeielts.britishcouncil.org/take-ielts/prepare/free-ielts-english-practice-tests/speaking';
 
 export function SpeakingStudio({ level, onExit, award }: {
   level: Level;
@@ -38,8 +38,7 @@ export function SpeakingStudio({ level, onExit, award }: {
         </div>
       </div>
       <SpeakingRound key={index} prompt={prompt} award={() => award(index, 10)} />
-      <a className="speaking-source" href="/mentor/CREDITS.txt" target="_blank" rel="noreferrer">3D harakat manbasi va litsenziya</a>{' · '}
-      {level === 'ielts' && <a className="speaking-source" href={council} target="_blank" rel="noreferrer">British Council rasmiy Speaking mashqlari <ArrowUpRight size={17} /></a>}
+      <Credits />
     </section>
   );
 }
