@@ -1,6 +1,6 @@
 import {
   ArrowDown, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, BookOpenText,
-  Check, CircleHelp, Flame, Gamepad2, Languages, Maximize2, Mic, Minimize2, PencilLine, Sparkles,
+  Check, CircleHelp, Headphones, Flame, Gamepad2, Languages, Maximize2, Mic, Minimize2, PencilLine, Sparkles,
   Square, Swords, Timer, Trophy, Volume2, X, Zap,
 } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
@@ -12,7 +12,10 @@ import { WordSprint } from './WordSprint';
 import { SpeakingStudio } from './SpeakingStudio';
 import { speakingPrompts } from './speaking';
 import './academy.css';
+import { MockHistory } from './MockHistory';
 
+const MockExam = lazy(() => import('./MockExam').then(m => ({ default: m.MockExam })));
+const BoardArena = lazy(() => import('./BoardArena').then(m => ({ default: m.BoardArena })));
 const ClassicGames = lazy(() => import('../App'));
 
 const levels = [
@@ -22,6 +25,8 @@ const levels = [
 ] as const;
 
 const activities = [
+  { id: 'mock', title: '3D ustoz bilan mini-mock', detail: 'Listening, Reading, Writing va Speaking sinovi.', icon: Headphones, color: 'blue', label: '4 KO‘NIKMA' },
+  { id: 'arena', title: 'Doska arenasi', detail: 'Ikki jamoa yoki ikki o‘quvchi bitta doskada bellashadi.', icon: Swords, color: 'orange', label: 'BELLASHUV' },
   { id: 'reading', title: 'Matn va tarjima', detail: 'Matnni o‘qing, tarjima qiling va savolga javob bering.', icon: BookOpenText, color: 'violet', label: 'READING' },
   { id: 'quiz', title: 'Tezkor savol-javob', detail: 'To‘g‘ri javobni tanlang va izoh orqali o‘rganing.', icon: Zap, color: 'mint', label: 'QUIZ' },
   { id: 'duel', title: 'Yozuv dueli', detail: 'Ikki o‘quvchi yozadi. Xatolarni toping va ballarni solishtiring.', icon: Swords, color: 'orange', label: '2 O‘QUVCHI' },
@@ -41,7 +46,7 @@ function loadAwards(): Awards {
     const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? '{}');
     if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return {};
     return Object.fromEntries(Object.entries(saved).filter(([key, value]) =>
-      /^(beginner|intermediate|ielts)-(reading|quiz|duel|sprint|speaking)-\d+$/.test(key) &&
+      /^(beginner|intermediate|ielts)-(reading|quiz|duel|sprint|speaking|mock)-\d+$/.test(key) &&
       typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= 10
     ));
   } catch {
@@ -141,7 +146,7 @@ export default function Academy() {
             <div className="level-grid">
               {levels.map(item => {
                 const completed = Object.keys(awards).filter(key => key.startsWith(`${item.id}-`)).length;
-                const total = readings[item.id].length + quizzes[item.id].length + writings[item.id].length + vocabulary[item.id].length + speakingPrompts[item.id].length;
+                const total = readings[item.id].length + quizzes[item.id].length + writings[item.id].length + vocabulary[item.id].length + speakingPrompts[item.id].length + 1;
                 return (
                   <article className={`progress-level ${item.color}`} key={item.id}>
                     <div className="progress-label"><h2>{item.title}</h2><strong>{completed} / {total}</strong></div>
@@ -152,6 +157,7 @@ export default function Academy() {
               })}
             </div>
             <button className="primary-button" onClick={openActivities}>Mashqlarga o‘tish <ArrowRight size={18} /></button>
+            <MockHistory />
           </section>
         )}
 
@@ -210,7 +216,9 @@ export default function Academy() {
           <SpeakingStudio key={level} level={level} onExit={openActivities} award={award} />
         )}
 
-        {screen === 'home' && activity && activity !== 'sprint' && activity !== 'speaking' && (
+        {activity === 'mock' && <Suspense fallback="Sinov yuklanmoqda…"><MockExam level={level} onExit={openActivities} award={()=>award(0,10)} /></Suspense>}
+        {activity === 'arena' && <Suspense fallback="Arena yuklanmoqda…"><BoardArena level={level} onExit={openActivities} /></Suspense>}
+        {screen === 'home' && activity && activity !== 'mock' && activity !== 'arena' && activity !== 'sprint' && activity !== 'speaking' && (
           <Practice key={`${level}-${activity}-${dailyRound}`} level={level} activity={activity} dailyRound={dailyRound} onExit={openActivities} award={award} />
         )}
       </main>
@@ -223,7 +231,7 @@ export default function Academy() {
   );
 }
 
-function Practice({ level, activity, dailyRound, onExit, award }: { level: Level; activity: Exclude<Activity, 'sprint' | 'speaking'>; dailyRound: number | null; onExit: () => void; award: (index: number, points: number) => void }) {
+function Practice({ level, activity, dailyRound, onExit, award }: { level: Level; activity: Exclude<Activity, 'sprint' | 'speaking' | 'mock' | 'arena'>; dailyRound: number | null; onExit: () => void; award: (index: number, points: number) => void }) {
   const [index, setIndex] = useState(dailyRound ?? 0);
   const items = activity === 'reading' ? readings[level] : activity === 'quiz' ? quizzes[level] : writings[level];
   const current = activities.find(item => item.id === activity)!;

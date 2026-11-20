@@ -1,0 +1,4 @@
+Motion adapted from AI4AnimationPy, Paul Starke and Sebastian Starke, Meta Platforms, Inc. and affiliates.
+Source: https://github.com/facebookresearch/ai4animationpy/blob/0feae690aebd0a4cb47a084577a50a937dd7edd1/Demos/MotionImport/GLB/cranberry.glb
+License: CC BY-NC 4.0, https://creativecommons.org/licenses/by-nc/4.0/
+Changes: selected joints sampled at 12 Hz for four seconds, pelvis-relative coordinates, procedural robot geometry.

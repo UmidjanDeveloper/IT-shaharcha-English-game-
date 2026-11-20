@@ -1,5 +1,6 @@
+import { TutorFeedback } from './TutorFeedback';
 import { ArrowLeft, ArrowUpRight, Check, Headphones, Mic, RotateCcw, Square, Timer } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { Level } from './lessons';
 import { analyseSpeaking, speakingPrompts } from './speaking';
 
@@ -7,6 +8,8 @@ type RecognitionWindow = Window & {
   SpeechRecognition?: typeof SpeechRecognition;
   webkitSpeechRecognition?: typeof SpeechRecognition;
 };
+
+const Mentor = lazy(() => import('./Mentor'));
 
 const council = 'https://takeielts.britishcouncil.org/take-ielts/prepare/free-ielts-english-practice-tests/speaking';
 
@@ -35,14 +38,16 @@ export function SpeakingStudio({ level, onExit, award }: {
         </div>
       </div>
       <SpeakingRound key={index} prompt={prompt} award={() => award(index, 10)} />
+      <a className="speaking-source" href="/mentor/CREDITS.txt" target="_blank" rel="noreferrer">3D harakat manbasi va litsenziya</a>{' · '}
       {level === 'ielts' && <a className="speaking-source" href={council} target="_blank" rel="noreferrer">British Council rasmiy Speaking mashqlari <ArrowUpRight size={17} /></a>}
     </section>
   );
 }
 
-function SpeakingRound({ prompt, award }: {
+export function SpeakingRound({ prompt, award, onTranscriptReview }: {
   prompt: (typeof speakingPrompts)[Level][number];
   award: () => void;
+  onTranscriptReview?: (text: string) => void;
 }) {
   const win = window as RecognitionWindow;
   const Recognition = win.SpeechRecognition ?? win.webkitSpeechRecognition;
@@ -132,6 +137,7 @@ function SpeakingRound({ prompt, award }: {
     setNotice('');
     setLive('');
     setResult(null);
+    onTranscriptReview?.('');
     const session = new Recognition();
     session.lang = 'en-GB';
     session.continuous = true;
@@ -175,6 +181,7 @@ function SpeakingRound({ prompt, award }: {
     stopSpeech();
     const feedback = analyseSpeaking(transcript);
     setResult(feedback);
+    onTranscriptReview?.(transcript);
     setCoach('review');
     if (feedback.words >= prompt.goal) award();
   }
@@ -183,14 +190,7 @@ function SpeakingRound({ prompt, award }: {
     <div className="practice-stack">
       <article className="practice-card speaking-prompt">
         <div className="coach-stage" data-pose={coach}>
-          <div className="coach-art" aria-hidden="true">
-            <div className="coach-shadow" />
-            <div className="coach-robot">
-              <span className="coach-antenna" />
-              <span className="coach-ear coach-ear-left" /><span className="coach-ear coach-ear-right" />
-              <div className="coach-head"><div className="coach-visor"><span className="coach-eye" /><span className="coach-eye" /><span className="coach-mouth" /></div></div>
-            </div>
-          </div>
+          <Suspense fallback={<span>Ustoz yuklanmoqda…</span>}><Mentor pose={coach} /></Suspense>
           <strong>{({ idle: 'Gapirishga tayyormisiz?', talking: 'Murabbiy savol beryapti', listening: 'Murabbiy tinglayapti', review: 'Mashq tahlili tayyor' })[coach]}</strong>
         </div>
         <div className="speaking-question">
@@ -224,6 +224,7 @@ function SpeakingRound({ prompt, award }: {
         <label htmlFor="speaking-transcript">Brauzer tushungan matn yoki yozma javob</label>
         <textarea id="speaking-transcript" lang="en" value={transcript} readOnly={listening} maxLength={2400} rows={5} onChange={event => {
           setTranscript(event.target.value);
+          onTranscriptReview?.('');
           setResult(null);
           setCoach('idle');
         }} />
@@ -232,6 +233,7 @@ function SpeakingRound({ prompt, award }: {
           <button className="primary-button" onClick={review} disabled={listening || !transcript.trim()}><Check size={17} /> Javobni tahlil qilish</button>
           <button className="secondary-button" disabled={listening || !transcript} onClick={() => {
             setTranscript('');
+            onTranscriptReview?.('');
             setResult(null);
             setCoach('idle');
             stopSpeech();
@@ -249,6 +251,7 @@ function SpeakingRound({ prompt, award }: {
         ))}</ul> : <p>Tekshirilgan keng tarqalgan grammatik xatolar topilmadi.</p>}
         <button className="secondary-button" onClick={() => setShowModel(!showModel)} aria-expanded={showModel}>{showModel ? 'Namunani yashirish' : 'Namunaviy javob'}</button>
         {showModel && <p className="translation-box" lang="en">{prompt.model}</p>}
+        <TutorFeedback skill="Speaking" prompt={prompt.question} answer={transcript} />
       </section>}
     </div>
   );
