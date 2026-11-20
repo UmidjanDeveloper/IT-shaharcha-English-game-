@@ -145,3 +145,13 @@ test('class lock treats other origins as external and the offline teacher answer
   assert.ok(!isExternal('/mentor/CREDITS.txt', 'https://club.uz'));
   assert.match(offlineAnswer('Passive voice qanday?'), /Passive voice/);
 });
+
+test('class lock always has an end time so a forgotten PIN cannot lock a computer forever', async () => {
+  const { lockRemaining, lockDurations } = await import('./ClassLock');
+  const now = 1_000_000;
+  assert.equal(lockRemaining(now, ''), 0);
+  assert.equal(lockRemaining(now, '1'), 0);               // old "locked forever" flag is ignored
+  assert.equal(lockRemaining(now, String(now + 60_000)), 60_000);
+  assert.equal(lockRemaining(now, String(now - 1)), 0);
+  assert.ok(lockDurations.every(([m]) => m <= 480));
+});

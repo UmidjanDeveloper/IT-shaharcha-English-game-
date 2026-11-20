@@ -618,3 +618,12 @@
 .classroom-chat .ustoz-input { border-color: rgb(255 255 255 / .12); }
 .classroom-chat .ustoz-input input { background: rgb(255 255 255 / .92); }
 @media (max-width: 700px) { .classroom-chat { max-height: 34vh; } }
+.lock-button.is-locked { background: #fff2c9; border-color: #e7c35a; color: #6a4a00; }
+.lock-dialog label { display: grid; font-weight: 700; }
+.lock-dialog .lock-error { color: #a33c2b; min-height: 1.2em; font-weight: 700; }
+.text-link { justify-self: start; color: var(--accent); font-weight: 700; text-decoration: underline; margin-top: 6px; }
+.lock-short { display: none; }
+@media (max-width: 545px) { .academy-tools .lock-button.is-locked .lock-short { display: inline; } .academy-tools .lock-button.is-locked { padding-inline: 10px; } }
+@media (max-width: 545px) { .academy-tools .board-button, .academy-tools .xp-pill { padding-inline: 9px; } .academy-tools { gap: 4px; } .academy-top { gap: 5px 6px; } }
+@media (max-width: 400px) { .academy-tools .board-button:not(.lock-button) { display: none; } } /* board mode is for classroom screens */
+@media (max-width: 340px) { .academy-brand small { display: none; } .academy-tools .lock-button.is-locked .lock-short { display: none; } }
