@@ -44,14 +44,10 @@ chrome --kiosk --app=https://sizning-saytingiz.uz
 
 Windows’da: Settings → Accounts → Other users → *Set up a kiosk (Assigned access)*.
 
-## 3D ustoz va 3D studiya
+## Til rasadxonasi
 
-- **Ustoz:** VRM avatar (pixiv VRoid namunasi). Tanasi [AI4AnimationPy](https://github.com/facebookresearch/ai4animationpy) dagi haqiqiy motion-capture yozuvi (Cranberry, `standing_S01`) bilan harakatlanadi: kutish, tushuntirish va tinglash holatlari VRM skeletiga ko‘chirilgan (`src/academy/three/coach.ts`). Ustiga: ko‘z qisish, ovozga mos lab harakati, sichqonchani kuzatuvchi ko‘zlar va bosh, soch fizikasi, qo‘l silkitish va doskaga ishora.
-- **Bosh sahifa:** to‘q studiya, girih naqshli pol, yorug‘lik devori, ustoz projektor nurida, bo‘limlar shisha panellarda. Panelni bossangiz kamera unga uchib boradi.
-- **3D sinf:** ustoz gologramma doska yonida, javob doskaga yoziladi.
-- Fayllar: `public/teacher/teacher.vrm` (4.7 MB) va `public/teacher/motions.*` (270 KB), bir kun keshlanadi. Kuchsiz kompyuterlarda effektlar avtomatik kamayadi.
+Bosh sahifa, 3D sinf va IELTS imtihoni bitta hajmli ustoz modelidan foydalanadi. Model oltita to‘qimali sirtdan va 22 suyakdan tuzilgan. AI4AnimationPy Cranberry harakatlari kutish, tinglash va tushuntirish holatlari uchun GLB ichiga joylangan.
 
-## Litsenziyalar
+Rasadxonada kamerani sichqoncha, sensorli ekran yoki aylantirish tugmalari bilan boshqarish mumkin. Globus IELTS bo‘limini, ustoz esa suhbatni ochadi. WebGL mavjud bo‘lmasa, rasadxonaning oldindan chizilgan ko‘rinishi va bo‘lim tugmalari ishlaydi.
 
-- Ustoz modeli: “VRM1_Constraint_Twist_Sample”, © 2022 pixiv Inc., VRM Public License 1.0.
-- Harakatlar: AI4AnimationPy (Meta), CC BY-NC 4.0 — faqat notijorat foydalanish. Batafsil: `public/mentor/CREDITS.txt`.
+Model `public/teacher/instructor.glb` faylida. Manbalar va litsenziyalar `public/mentor/CREDITS.txt` faylida keltirilgan. AI4AnimationPy harakatlari CC BY-NC 4.0 litsenziyasi bilan tarqatiladi.

@@ -11,7 +11,7 @@ const rooms=[
 ] as const;
 export default function World3D({onSelect,children}:{onSelect:(section:WorldSection)=>void;children?:ReactNode}) {
   return <section className="atelier-home">
-    <div className="atelier-cover"><Mentor pose="idle" view="cover"/>{children}</div>
+    <div className="atelier-cover"><Mentor pose="idle" view="cover" onSelect={onSelect}/>{children}</div>
     <nav className="atelier-rooms" aria-label="Akademiya bo‘limlari">
       {rooms.map(({id,title,icon:Icon})=><button key={id} onClick={()=>onSelect(id)}><Icon size={22}/><span>{title}</span><ArrowUpRight size={16}/></button>)}
     </nav>

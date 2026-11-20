@@ -202,8 +202,8 @@ export default function Academy() {
                 else openClassroom();
               }}>
                 <div className="atelier-copy"><span>IT SHAHARCHA &nbsp; / &nbsp; XATIRCHI</span>
-                  <h1>Ingliz tili<br/><em>ustaxonasi.</em></h1>
-                  <p>Birinchi inglizcha gapingizdan IELTS suhbatigacha. Ustoz bilan gaplashing yoki sinfingiz bilan mashq boshlang.</p>
+                  <h1>Til rasadxonasi</h1>
+                  <p>Ustoz bilan suhbatlashing yoki mashq uchun bo‘lim tanlang.</p>
                   <div><button className="world-primary" onClick={openActivities}>Darsni boshlash <ArrowDown size={17}/></button>
                   <button className="world-ghost" onClick={openClassroom}>Ustoz bilan gaplashish</button></div>
                 </div>
